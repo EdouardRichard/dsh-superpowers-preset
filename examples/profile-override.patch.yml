@@ -8,15 +8,16 @@
 #   * renames the mode and moves it to the top of the roster (order: 2),
 #   * replaces the description, and
 #   * drops the present row,
-# while keeping the persona bootstrap byte for byte.
+# while keeping the persona bootstrap and every other row byte for byte.
 #
 # Install it by pasting its contents into:
-#   $DSH_HOME/profiles/<your-profile>/cordis.patch.yml
+#   /profiles/<your-profile>/cordis.patch.yml
 # then restarting the profile.
 #
 # Regenerate after a DSH or preset change: copy the config.plugins list out of
 # cordis.patch.yml and edit it. Keeping the two in step matters, because a stale
-# override pins the mode to an old composition.
+# override pins the mode to an old composition — including an old set of tools
+# and, if it predates them, no local-skill provider at all.
 - insert:
     - id: preset-superpowers
       name: '@deepseek-ai/dsh-agent-preset'
@@ -26,10 +27,11 @@
         description: My own description of this mode.
         order: 2
         plugins:
-          # The identity line matches the shipped `standard` preset; everything
-          # after it is the bootstrap from skills/using-superpowers/SKILL.md.
-          # `scripts/sync-from-upstream.mjs` regenerates this block and
-          # `scripts/verify.mjs` fails if it drifts from the skill file.
+          # ---- Superpowers additions ---------------------------------------------
+          # The identity line matches the shipped `standard` preset; everything after
+          # it is the bootstrap from skills/using-superpowers/SKILL.md.
+          # `scripts/sync-bootstrap.mjs` regenerates this block and `scripts/verify.mjs`
+          # fails if it drifts from the skill file.
           - id: persona
             name: '@deepseek-ai/dsh-persona'
             config:
@@ -103,18 +105,19 @@
 
                 User instructions (`AGENTS.md` — user level at `$DSH_HOME/AGENTS.md`, project level at `<project>/AGENTS.md` — and direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
               suffix: Your working directory is {{cwd}}.
+          - id: superpowers-skills
+            name: 'superpowers-preset-dsh/skills'
+
+          # ---- everything below mirrors the shipped `standard` preset --------------
+          # Regenerate with: node scripts/sync-preset-from-dsh.mjs <dsh-root>
+          # `scripts/verify.mjs` fails if any row Standard carries goes missing here,
+          # which is how a dropped local-skill provider would be caught.
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:
               maxBytes: 65536
           - id: time-context
             name: '@deepseek-ai/dsh-time-context'
-          # The packaged Superpowers skills, registered into this preset's
-          # skill layer alone (never the host layer).
-          - id: superpowers-skills
-            name: 'superpowers-preset-dsh/skills'
-          - id: tool-skill
-            name: '@deepseek-ai/dsh-tool-skill'
           - id: tool-bash
             name: '@deepseek-ai/dsh-tool-bash'
             disabled: !!js process.platform === 'win32'
@@ -131,6 +134,10 @@
             name: '@deepseek-ai/dsh-tool-jobs'
           - id: tool-schedule
             name: '@deepseek-ai/dsh-tool-schedule'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
           - id: command-goal
             name: '@deepseek-ai/dsh-command-goal'
           - id: tool-goal
@@ -208,12 +215,34 @@
                       - schedule_delete
                       - schedule_list
                       - schedule_update
+              - id: tool-subagent-codex
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: codex
+                  toolName: subagent_codex
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-claude-code
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: claude-code
+                  toolName: subagent_claude_code
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
               - id: workflow-ptc
                 name: '@deepseek-ai/dsh-workflow-ptc'
                 config:
                   provider: spawn
               - id: tool-workflow
                 name: '@deepseek-ai/dsh-tool-workflow'
+              - id: tool-ralph
+                name: '@deepseek-ai/dsh-tool-ralph'
+                disabled: true
+                config:
+                  subagentProvider: spawn
+                  maxRounds: 64
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
           - id: tool-todo
@@ -225,3 +254,6 @@
             config:
               fetch: true
               searchTimeoutMs: 60000
+          - id: tool-plugin-manager
+            name: '@deepseek-ai/dsh-plugin-manager/tools'
+            disabled: true

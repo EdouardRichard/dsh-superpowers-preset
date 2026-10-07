@@ -1,0 +1,171 @@
+{
+  "$comment": "Snapshot of every plugin row the shipped `standard` preset carries, taken from a DSH source checkout. scripts/verify.mjs fails when this preset stops covering one of them, because a missing row means missing capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>",
+  "source": "packages/bundle/web-app/presets/standard.patch.yml",
+  "rows": [
+    {
+      "id": "agent-instructions",
+      "name": "@deepseek-ai/dsh-agent-instructions",
+      "disabledInStandard": false
+    },
+    {
+      "id": "time-context",
+      "name": "@deepseek-ai/dsh-time-context",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-bash",
+      "name": "@deepseek-ai/dsh-tool-bash",
+      "disabledInStandard": true
+    },
+    {
+      "id": "tool-pwsh",
+      "name": "@deepseek-ai/dsh-tool-pwsh",
+      "disabledInStandard": true
+    },
+    {
+      "id": "tool-fs",
+      "name": "@deepseek-ai/dsh-tool-fs",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-fs-search",
+      "name": "@deepseek-ai/dsh-tool-fs-search",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-jobs",
+      "name": "@deepseek-ai/dsh-tool-jobs",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-schedule",
+      "name": "@deepseek-ai/dsh-tool-schedule",
+      "disabledInStandard": false
+    },
+    {
+      "id": "skill-filesystem",
+      "name": "@deepseek-ai/dsh-skill-filesystem",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-skill",
+      "name": "@deepseek-ai/dsh-tool-skill",
+      "disabledInStandard": false
+    },
+    {
+      "id": "command-goal",
+      "name": "@deepseek-ai/dsh-command-goal",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-goal",
+      "name": "@deepseek-ai/dsh-tool-goal",
+      "disabledInStandard": false
+    },
+    {
+      "id": "planning",
+      "name": "cordis:group",
+      "disabledInStandard": false
+    },
+    {
+      "id": "plan-mode",
+      "name": "@deepseek-ai/dsh-plan-mode",
+      "disabledInStandard": false
+    },
+    {
+      "id": "compaction",
+      "name": "cordis:group",
+      "disabledInStandard": false
+    },
+    {
+      "id": "compaction-basic",
+      "name": "@deepseek-ai/dsh-compaction-basic",
+      "disabledInStandard": false
+    },
+    {
+      "id": "command-compact",
+      "name": "@deepseek-ai/dsh-command-compact",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-result-pruner",
+      "name": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+      "disabledInStandard": false
+    },
+    {
+      "id": "delegation",
+      "name": "cordis:group",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-subagent-control",
+      "name": "@deepseek-ai/dsh-tool-subagent-control",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-subagent-list-agents",
+      "name": "@deepseek-ai/dsh-tool-subagent-control/list-agents",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-subagent",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-subagent-fork",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-subagent-codex",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "disabledInStandard": true
+    },
+    {
+      "id": "tool-subagent-claude-code",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "disabledInStandard": true
+    },
+    {
+      "id": "workflow-ptc",
+      "name": "@deepseek-ai/dsh-workflow-ptc",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-workflow",
+      "name": "@deepseek-ai/dsh-tool-workflow",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-ralph",
+      "name": "@deepseek-ai/dsh-tool-ralph",
+      "disabledInStandard": true
+    },
+    {
+      "id": "tool-ask-user",
+      "name": "@deepseek-ai/dsh-tool-ask-user",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-todo",
+      "name": "@deepseek-ai/dsh-tool-todo",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-web",
+      "name": "@deepseek-ai/dsh-tool-web",
+      "disabledInStandard": false
+    },
+    {
+      "id": "present",
+      "name": "@deepseek-ai/dsh-tool-present",
+      "disabledInStandard": false
+    },
+    {
+      "id": "tool-plugin-manager",
+      "name": "@deepseek-ai/dsh-plugin-manager/tools",
+      "disabledInStandard": true
+    }
+  ]
+}

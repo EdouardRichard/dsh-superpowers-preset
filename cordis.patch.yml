@@ -6,7 +6,8 @@
 # only becomes active when a task is started with 「Superpowers」 selected.
 #
 # The declaration is an ordinary `@deepseek-ai/dsh-agent-preset` row, so its
-# `plugins` list is the complete composition of one Superpowers session:
+# `plugins` list is the complete composition of one Superpowers session. That
+# list is **the shipped `standard` preset's list, plus two rows**:
 #
 #   - `persona` inline below carries the Superpowers bootstrap. `dsh-persona`
 #     registers it as the scoped system-prompt persona, which means the rules
@@ -14,8 +15,13 @@
 #     compaction — unlike a one-shot "session start" message.
 #   - `superpowers-preset-dsh/skills` registers the packaged skill catalog into
 #     THIS preset's skill layer only. Sessions in other modes never see it.
-#   - the rest mirrors the shipped `standard` preset, so the mode is fully
-#     capable on its own: no need to also run a host-wide skills plugin.
+#
+# Everything from `# ---- everything below mirrors ...` onward is copied byte
+# for byte from `packages/bundle/web-app/presets/standard.patch.yml`. That is
+# deliberate: DSH disables several working rows at the host layer and lets each
+# preset mount its own copy, so a preset that forgets one silently loses a
+# capability. `scripts/sync-preset-from-dsh.mjs` re-mirrors the list and
+# `scripts/verify.mjs` fails when a row Standard carries goes missing here.
 #
 # Every row can be re-addressed by later layers. To rename the mode, or to drop
 # a tool you do not want, override the `preset-superpowers` row from your
@@ -34,10 +40,11 @@
           scoped to this mode.
         order: 10
         plugins:
-          # The identity line matches the shipped `standard` preset; everything
-          # after it is the bootstrap from skills/using-superpowers/SKILL.md.
-          # `scripts/sync-from-upstream.mjs` regenerates this block and
-          # `scripts/verify.mjs` fails if it drifts from the skill file.
+          # ---- Superpowers additions ---------------------------------------------
+          # The identity line matches the shipped `standard` preset; everything after
+          # it is the bootstrap from skills/using-superpowers/SKILL.md.
+          # `scripts/sync-bootstrap.mjs` regenerates this block and `scripts/verify.mjs`
+          # fails if it drifts from the skill file.
           - id: persona
             name: '@deepseek-ai/dsh-persona'
             config:
@@ -111,18 +118,19 @@
 
                 User instructions (`AGENTS.md` — user level at `$DSH_HOME/AGENTS.md`, project level at `<project>/AGENTS.md` — and direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
               suffix: Your working directory is {{cwd}}.
+          - id: superpowers-skills
+            name: 'superpowers-preset-dsh/skills'
+
+          # ---- everything below mirrors the shipped `standard` preset --------------
+          # Regenerate with: node scripts/sync-preset-from-dsh.mjs <dsh-root>
+          # `scripts/verify.mjs` fails if any row Standard carries goes missing here,
+          # which is how a dropped local-skill provider would be caught.
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:
               maxBytes: 65536
           - id: time-context
             name: '@deepseek-ai/dsh-time-context'
-          # The packaged Superpowers skills, registered into this preset's
-          # skill layer alone (never the host layer).
-          - id: superpowers-skills
-            name: 'superpowers-preset-dsh/skills'
-          - id: tool-skill
-            name: '@deepseek-ai/dsh-tool-skill'
           - id: tool-bash
             name: '@deepseek-ai/dsh-tool-bash'
             disabled: !!js process.platform === 'win32'
@@ -139,6 +147,10 @@
             name: '@deepseek-ai/dsh-tool-jobs'
           - id: tool-schedule
             name: '@deepseek-ai/dsh-tool-schedule'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
           - id: command-goal
             name: '@deepseek-ai/dsh-command-goal'
           - id: tool-goal
@@ -216,12 +228,34 @@
                       - schedule_delete
                       - schedule_list
                       - schedule_update
+              - id: tool-subagent-codex
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: codex
+                  toolName: subagent_codex
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
+              - id: tool-subagent-claude-code
+                name: '@deepseek-ai/dsh-tool-subagent'
+                disabled: true
+                config:
+                  provider: claude-code
+                  toolName: subagent_claude_code
+                  backgroundMode: one-shot
+                  maxDepth: provider-managed
               - id: workflow-ptc
                 name: '@deepseek-ai/dsh-workflow-ptc'
                 config:
                   provider: spawn
               - id: tool-workflow
                 name: '@deepseek-ai/dsh-tool-workflow'
+              - id: tool-ralph
+                name: '@deepseek-ai/dsh-tool-ralph'
+                disabled: true
+                config:
+                  subagentProvider: spawn
+                  maxRounds: 64
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
           - id: tool-todo
@@ -235,3 +269,6 @@
               searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
+          - id: tool-plugin-manager
+            name: '@deepseek-ai/dsh-plugin-manager/tools'
+            disabled: true

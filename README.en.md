@@ -229,9 +229,35 @@ cordis.patch.yml
 └── preset-superpowers  (@deepseek-ai/dsh-agent-preset)
     ├── persona                                 ← using-superpowers body into the system prompt
     ├── superpowers-preset-dsh/skills           ← 15 skills, registered into this preset's layer only
+    ├── skill-filesystem                        ← local skills: project / user / bundled
     ├── tool-skill                              ← the catalog and the skill loader
-    └── terminal / fs / search / plan / compaction / subagents / workflow / goal / todo / web
+    └── everything else copied from the shipped Standard preset
 ```
+
+### It is Standard plus Superpowers — and that is enforced
+
+DSH disables several working rows at the host layer and lets each agent preset
+mount its own copy. The one that bites is `skill-filesystem`: the shipped patch
+says plainly that "presets own local discovery"
+(`packages/bundle/web-app/cordis.patch.yml:493-503`). A preset that forgets to
+mount it has **no local skill discovery at all** — `.dsh/skills`,
+`.agents/skills`, and `$DSH_HOME/skills` all disappear from the catalog, with no
+error to tell you why.
+
+So this preset guards that class of loss three ways:
+
+1. **The list is mirrored, not hand-written.**
+   `npm run sync:preset -- <dsh-checkout>` rebuilds the plugin list straight from
+   the shipped `standard` preset, keeping only this package's own two rows (the
+   persona and the Superpowers provider) and copying the rest byte for byte.
+2. **A committed snapshot gates the build.** `preset/standard-parity.json`
+   records every row Standard carries, and `npm run verify` fails the moment this
+   preset stops mounting one.
+3. **The diagnostic explains itself**, so the next person to hit it reads why a
+   missing row is a missing capability instead of deleting the check.
+
+After a DSH upgrade, re-run `npm run sync:preset -- <path>` and then
+`npm run verify`.
 
 The full explanation — why the bootstrap is a persona rather than a session-start
 injection, and why the provider is a subpath export rather than the package root —
@@ -327,8 +353,10 @@ npm run verify
 ```
 
 It checks that the bundle manifest resolves, the preset declaration is
-well-formed, the persona text matches the skill file byte for byte, all 15 skills
-list and load through the real provider, and no relative link dangles.
+well-formed, the provider is mounted inside the preset rather than at the host
+layer, every row the shipped Standard preset carries is still mounted here, the
+persona text matches the skill file byte for byte, all 15 skills list and load
+through the real provider, and no relative link dangles.
 
 End-to-end, in a throwaway profile:
 

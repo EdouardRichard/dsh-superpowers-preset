@@ -80,7 +80,7 @@ if (typeof pkg.exports?.['./skills'] !== 'string') {
   ok(`skill provider entry: ${pkg.exports['./skills']}`)
 }
 
-for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml']) {
+for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml', 'preset/standard-parity.json']) {
   if (!(await stat(join(pkgRoot, required)).catch(() => null))?.isFile()) fail(`${required} is missing`)
 }
 if (!(pkg.files ?? []).includes('LICENSE') || !(pkg.files ?? []).includes('NOTICE.md')) {
@@ -150,6 +150,55 @@ if (leaked.length > 0) {
   )
 }
 ok(`plugin rows: ${specifiers.length} specifiers, all resolvable; provider is preset-scoped (host rows: ${hostLevelSpecifiers.join(', ')})`)
+
+// This preset is meant to be Standard plus Superpowers. DSH disables several
+// working rows at the host layer and lets each preset mount its own copy —
+// `skill-filesystem` (local skill discovery) is the one that bites, because a
+// preset that forgets it silently loses every project and user skill. The
+// snapshot records what the shipped preset carries so that loss fails the build.
+const parity = await readJson(join(pkgRoot, 'preset', 'standard-parity.json'))
+
+/**
+ * Every row (id plus module name) a patch file mounts, nested groups included.
+ * The scan is indentation-based because a preset's `config.plugins` is a plain
+ * YAML list, not a Loader row set.
+ * @param text - bundle patch contents.
+ * @returns rows that resolved both an id and a module name.
+ */
+function presetRows(text) {
+  const rows = []
+  for (const line of text.split('\n')) {
+    const id = /^( +)- id: ([\w-]+)\s*$/.exec(line)
+    if (id !== null) {
+      rows.push({ indent: id[1].length, id: id[2], name: undefined })
+      continue
+    }
+    const name = /^( +)name: (.+?)\s*$/.exec(line)
+    if (name !== null && rows.length > 0) {
+      const last = rows[rows.length - 1]
+      if (last.name === undefined && name[1].length === last.indent + 2) {
+        last.name = name[2].replace(/^'(.*)'$/, '$1')
+      }
+    }
+  }
+  return rows.filter(row => row.name !== undefined)
+}
+
+const shippedKeys = new Set(presetRows(patchText).map(row => `${row.id}|${row.name}`))
+if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
+  fail('preset/standard-parity.json carries no rows; refresh it with scripts/sync-preset-from-dsh.mjs')
+} else {
+  const missing = parity.rows.filter(row => !shippedKeys.has(`${row.id}|${row.name}`))
+  if (missing.length > 0) {
+    fail(
+      `the preset no longer mounts ${missing.length} row(s) the shipped standard preset carries: ` +
+      `${missing.map(row => row.id).join(', ')}.\n` +
+      '    A missing row is a missing capability — re-mirror with scripts/sync-preset-from-dsh.mjs, ' +
+      'or record the deliberate removal in the README compatibility table.',
+    )
+  }
+  ok(`standard parity: all ${parity.rows.length} shipped rows present, plus this package's own provider`)
+}
 
 // --------------------------------------------------------------- bootstrap --
 

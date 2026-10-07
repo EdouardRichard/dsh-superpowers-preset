@@ -8,6 +8,38 @@ The bundled skill content tracks `obra/superpowers`; the synced upstream version
 is recorded in `package.json` under `dsh.superpowersUpstream.tag` and repeated in
 each release below.
 
+## [1.0.1] — 2026-10-07
+
+Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+### Fixed
+
+- **The preset no longer drops local skill discovery.** `1.0.0` omitted
+  `skill-filesystem` from its plugin list. DSH disables that row at the host
+  layer and lets each agent preset mount its own copy — "presets own local
+  discovery" (`packages/bundle/web-app/cordis.patch.yml:493-503`) — so the mode
+  had no filesystem provider at all. Project skills (`.dsh/skills`,
+  `.agents/skills`), user skills (`$DSH_HOME/skills`, `~/.agents/skills`), and
+  the bundled root were all missing from the catalog, with no error to explain
+  it. A Superpowers task now sees everything a Standard task sees, plus the 15
+  Superpowers skills.
+
+### Added
+
+- **The plugin list is mirrored from the shipped `standard` preset.**
+  `scripts/sync-preset-from-dsh.mjs <dsh-checkout>` rebuilds it from
+  `packages/bundle/web-app/presets/standard.patch.yml`, keeping only this
+  package's own two rows (the persona and the Superpowers provider) and copying
+  the rest byte for byte. `--check` reports drift without writing.
+- **`preset/standard-parity.json`**, a committed snapshot of every row the
+  shipped preset carries, and a `npm run verify` check that fails when this
+  preset stops mounting one. A missing row is a missing capability, so it should
+  never be a silent diff.
+- The override example is regenerated from the mirrored list and now carries
+  `skill-filesystem` too.
+
+[1.0.1]: https://github.com/EdouardRichard/superpowers-preset-dsh/releases/tag/v1.0.1
+
 ## [1.0.0] — 2026-10-07
 
 First release. Upstream skills synced from **obra/superpowers v6.4.2**.

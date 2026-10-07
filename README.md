@@ -211,9 +211,29 @@ cordis.patch.yml
 └── preset-superpowers  (@deepseek-ai/dsh-agent-preset)
     ├── persona                                 ← using-superpowers 正文进系统提示词
     ├── superpowers-preset-dsh/skills           ← 15 个技能，只注册进本预设层
+    ├── skill-filesystem                        ← 本地技能：项目 / 用户 / bundled
     ├── tool-skill                              ← 技能目录 + skill 工具
-    └── 终端 / 文件 / 检索 / 计划 / 压缩 / 子 Agent / 工作流 / goal / todo / web
+    └── 其余全部照抄官方「标准模式」的那份清单
 ```
+
+### 它就是「标准模式 + Superpowers」
+
+**这一点是有保证的，不是大概齐。** DSH 会把一些实际可用的行在 host 层禁用，
+改由每个预设自己挂载——最典型的是 `skill-filesystem`：官方补丁里写得很清楚，
+"presets own local discovery"（`packages/bundle/web-app/cordis.patch.yml:493-503`）。
+预设如果忘了挂它，就**没有本地技能发现**：项目里的 `.dsh/skills`、`.agents/skills`
+和用户目录的 `$DSH_HOME/skills` 全部看不见，而且不会报错。
+
+所以这里做了三重保障：
+
+1. **清单是镜像来的，不是手写的。**
+   `npm run sync:preset -- <dsh 源码目录>` 直接从官方 `standard` 预设重建插件清单，
+   只保留本包自己的两行（persona 和 Superpowers provider），其余逐字节照抄。
+2. **提交了快照，卡在构建上。** `preset/standard-parity.json` 记录官方预设携带的
+   每一行；`npm run verify` 一旦发现本预设少了任何一行就失败。
+3. **失败信息会解释原因**，免得后来的人顺手把检查删掉。
+
+升级 DSH 后重跑 `npm run sync:preset -- <path>`，然后 `npm run verify` 即可。
 
 完整说明（包括为什么 bootstrap 用 persona 而不是会话开始时的注入、为什么
 provider 用子路径导出而不是包根）见 [docs/architecture.md](docs/architecture.md)。
@@ -301,8 +321,9 @@ npm run verify
 npm run verify
 ```
 
-它检查 bundle 清单能解析、预设声明合法、persona 正文与技能文件一致、15 个
-技能都能通过真实 provider 列出并读回，以及没有悬空相对链接。
+它检查 bundle 清单能解析、预设声明合法、provider 只挂在预设作用域、官方
+标准预设携带的每一行都还在、persona 正文与技能文件一致、15 个技能都能通过
+真实 provider 列出并读回，以及没有悬空相对链接。
 
 装进真实 profile 的端到端验证：
 

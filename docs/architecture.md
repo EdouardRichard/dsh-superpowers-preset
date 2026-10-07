@@ -32,9 +32,41 @@ superpowers-preset-dsh/
 | --- | --- |
 | `persona` | Carries the bootstrap. `dsh-persona` registers it as this scope's `deployment:persona-prefix` section, shadowing the deployment default. |
 | `superpowers-preset-dsh/skills` | Registers the packaged skill catalog into this preset's skill layer. |
+| `skill-filesystem` | The **local** skill provider: project `.dsh/skills` and `.agents/skills`, user `$DSH_HOME/skills` and `~/.agents/skills`. |
 | `tool-skill` | Renders the catalog and provides the `skill` loader. |
 | `agent-instructions`, `time-context` | `AGENTS.md` loading and the runtime clock, matching the shipped Standard preset. |
-| terminal, fs, search, jobs, schedule, goal, plan mode, compaction, delegation, ask-user, todo, web, present | The working tool set, so the mode is self-sufficient. |
+| everything else | Terminal, fs, search, jobs, schedule, goal, plan mode, compaction, delegation, ask-user, todo, web, present — the working tool set, copied from Standard. |
+
+## The plugin list is Standard's, and that is enforced
+
+`skill-filesystem` deserves its own note, because it is the row whose absence is
+easiest to miss and worst to miss.
+
+DSH keeps the `skills` **registry** on the host plane but moves **discovery**
+behind presets: the base `skill-filesystem` row is disabled at the host layer,
+with the shipped patch explaining that "presets own local discovery"
+(`packages/bundle/web-app/cordis.patch.yml:493-503`). So a preset that does not
+mount its own copy has no filesystem provider at all — its agent sees the
+packaged catalog and silently loses every skill the user has written, in the
+project or in `$DSH_HOME/skills`.
+
+Because that class of loss is invisible, it is guarded three ways:
+
+1. **The list is mirrored, not hand-written.**
+   `scripts/sync-preset-from-dsh.mjs <dsh-root>` rebuilds the plugin list from
+   the shipped `standard` preset, keeping only this package's two own rows: the
+   persona and the Superpowers provider. Everything else is copied byte for
+   byte. Run it after every DSH upgrade.
+2. **A committed snapshot gates the build.** `preset/standard-parity.json`
+   records every row the shipped preset carries (id, module, and whether
+   Standard disables it). `npm run verify` fails if this preset stops mounting
+   any of them.
+3. **The failure mode is named in the diagnostic**, so the next person to hit it
+   reads *why* a missing row is a missing capability rather than deleting the
+   check.
+
+The result is that this preset is **Standard plus Superpowers**, not a separate
+composition that happens to look similar.
 
 ## Why the bootstrap is a persona, not a message
 
@@ -105,6 +137,23 @@ npm run sync -- .upstream
 npm run verify
 ```
 
+## How the preset stays aligned with DSH
+
+`cordis.patch.yml` is a **mirrored** file. Do not hand-edit the block below the
+`everything below mirrors` marker either.
+
+```bash
+# After upgrading DSH, against the new source checkout or installation:
+npm run sync:preset -- /path/to/deepseek-harness
+
+# Review the diff, then confirm nothing drifted:
+npm run sync:preset -- /path/to/deepseek-harness --check
+npm run verify
+```
+
+The mirror keeps the persona and the Superpowers provider verbatim and replaces
+everything else with the shipped Standard list.
+
 `scripts/sync-from-upstream.mjs` copies the upstream tree into a staging
 directory, applies the asserted rewrites, strips the `superpowers:` namespace
 prefix, overlays `port/overrides/`, re-renders the persona prefix, and only then
@@ -120,9 +169,11 @@ adaptation. The adaptations themselves are documented in
 1. the bundle manifest and the `./skills` export resolve;
 2. the preset declaration has an id, name, description, order, a non-empty plugin
    list, and only resolvable plugin specifiers;
-3. the persona prefix equals the identity line plus the current
+3. the skill provider is mounted inside the preset and **not** as a host row;
+4. every row the shipped `standard` preset carries is still mounted here;
+5. the persona prefix equals the identity line plus the current
    `using-superpowers` body, with no `{{…}}` group `dsh-persona` would reject;
-4. every skill bundle lists, loads, and resolves its resource base through the
+6. every skill bundle lists, loads, and resolves its resource base through the
    real provider, with duplicate names and dangling relative links reported.
 
 End-to-end verification (install into a throwaway profile, start a task in each
