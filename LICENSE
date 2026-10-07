@@ -2,12 +2,10 @@ MIT License
 
 Copyright (c) 2026 Edouard Richard and superpowers-preset-dsh contributors
 
-This project is a derivative work of Superpowers
+Portions of this software are derived from Superpowers
 (https://github.com/obra/superpowers), Copyright (c) 2025 Jesse Vincent,
-which is also licensed under the MIT License. The files under `skills/` are
-adapted from that project. The upstream copyright notice and permission
-notice are reproduced in full in NOTICE.md, which is part of this
-distribution.
+likewise under the MIT License. See NOTICE.md, which is part of this
+distribution, for the upstream licence text and the list of adaptations.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
