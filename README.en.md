@@ -44,6 +44,18 @@ tradeoffs are laid out in [Compared with the plugin approach](docs/plugin-vs-pre
 
 ## Install
 
+> **One word of clarification first.** `dsh plugin add` is DSH's **installation
+> channel**, and what it installs is a **bundle** — an ordinary npm package that
+> declares a `dsh.bundle.patch`. What that bundle becomes at runtime is entirely
+> up to what its patch contains.
+>
+> This package inserts **one agent-preset declaration** into the profile's
+> composition and mounts nothing at the host layer. So the accurate description
+> is "**a preset installed through the plugin channel**", not "a plugin". The only
+> code it ships is `lib/skills.js`, mounted as a **child row of the preset**, which
+> is why it registers into the preset's own skill layer. The reasoning is in
+> [How it works](#how-it-works).
+
 ### Option 1 — let DSH install it
 
 Start a conversation in DSH and send:
