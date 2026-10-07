@@ -1,0 +1,53 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify (node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No dependencies to install: the package is dependency-free by design.
+      # This step exists so the job fails loudly if that ever stops being true.
+      - name: dependency-free check
+        shell: bash
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const deps = Object.keys(pkg.dependencies ?? {});
+            const peers = Object.keys(pkg.peerDependencies ?? {});
+            if (deps.length || peers.length) {
+              console.error('runtime dependencies appeared:', [...deps, ...peers].join(', '));
+              process.exit(1);
+            }
+            console.log('no runtime dependencies, no peer dependencies');
+          "
+
+      - name: verify
+        run: npm run verify
+
+      - name: JSON manifests parse
+        shell: bash
+        run: |
+          node -e "
+            for (const f of ['package.json']) JSON.parse(require('fs').readFileSync(f, 'utf8'));
+            console.log('manifests parse');
+          "

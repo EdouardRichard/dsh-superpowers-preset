@@ -1,0 +1,66 @@
+{
+  "name": "superpowers-preset-dsh",
+  "version": "1.0.0",
+  "description": "Superpowers as a DeepSeek Harness agent preset: the full obra/superpowers engineering methodology in one selectable mode, with its skills and workflow rules scoped to that mode.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Edouard Richard",
+  "homepage": "https://github.com/EdouardRichard/superpowers-preset-dsh#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EdouardRichard/superpowers-preset-dsh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EdouardRichard/superpowers-preset-dsh/issues"
+  },
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./skills": "./lib/skills.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "docs",
+    "examples",
+    "static",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "NOTICE.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "verify": "node scripts/verify.mjs",
+    "sync": "node scripts/sync-from-upstream.mjs",
+    "sync:bootstrap": "node scripts/sync-bootstrap.mjs",
+    "test": "node --test scripts/tests/"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "deepseek",
+    "agent-preset",
+    "preset",
+    "superpowers",
+    "skills",
+    "cordis",
+    "tdd",
+    "brainstorming"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "superpowersUpstream": {
+      "repository": "https://github.com/obra/superpowers",
+      "tag": "v6.4.2",
+      "license": "MIT"
+    }
+  }
+}

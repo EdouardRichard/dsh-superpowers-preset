@@ -1,0 +1,9 @@
+# Vendored skill bodies must stay byte-identical to what the sync script wrote,
+# so git must never rewrite their line endings on checkout.
+skills/** -text
+skills/**/*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf

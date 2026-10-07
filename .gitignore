@@ -1,0 +1,15 @@
+# Build and test artefacts
+node_modules/
+.skills-sync-staging/
+.upstream/
+browser-screenshots/
+*.tgz
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# DSH scratch state a skill may create while you try the preset out
+.superpowers/
