@@ -319,22 +319,6 @@ dsh --profile sptest --port 3099 --no-open
   这 15 个技能；
 - 标准模式任务的系统提示词里没有它，技能目录里也没有它们。
 
-### `1.0.0` 实际验过什么
-
-| 项目 | 状态 |
-| --- | --- |
-| `npm run verify` | 8 项检查通过 |
-| `dsh plugin --profile <p> add <本地绝对路径>` | 实测通过 |
-| `dsh plugin --profile <p> add ./相对路径` | 实测通过（按执行目录解析为绝对 link） |
-| `dsh plugin --profile <p> add github:EdouardRichard/superpowers-preset-dsh` | 实测通过（干净 profile，含 `--dump-config` 组合校验） |
-| `pnpm dlx @deepseek-ai/dsh@0.2.1-alpha.1 plugin --profile <新 profile> add github:...` | 实测通过（验证 npm 已发布 CLI + 首次自动初始化 profile；`npx` 形式与此等价） |
-| `dsh plugin --profile <p> remove superpowers-preset-dsh` | 实测通过：依赖与 `dsh.profile.bundles` 条目一并移除，组合里不再有该预设 |
-| 端到端会话对比 | 实测通过（见上） |
-| **方式一「让 DSH 自己装」** | **未逐字实测**。它是把命令行交给 Agent 执行，能否成功取决于 Agent 能否找到可用的 `dsh`；重启 profile 必须由你手动做 |
-| `npx @deepseek-ai/dsh ...` 本身 | **未在本机实测**（本机 Volta 的 npm 安装已损坏，`npx` 无法运行）；已用 `pnpm dlx` 跑同一个已发布 CLI 验证等价路径 |
-
-验证环境：DSH `0.2.1-alpha.1`，Windows，Node 24.18.1。
-
 ## 许可证与致谢
 
 MIT。技能内容改编自 [obra/superpowers](https://github.com/obra/superpowers)

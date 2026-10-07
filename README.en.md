@@ -346,22 +346,6 @@ transcripts:
   its skill catalog lists all 15 skills;
 - the Standard task's system prompt does not, and its catalog does not.
 
-### What `1.0.0` actually exercised
-
-| Item | Status |
-| --- | --- |
-| `npm run verify` | 8 checks pass |
-| `dsh plugin --profile <p> add <absolute local path>` | Verified |
-| `dsh plugin --profile <p> add ./relative-path` | Verified (resolved against the invoking directory, recorded as an absolute link) |
-| `dsh plugin --profile <p> add github:EdouardRichard/superpowers-preset-dsh` | Verified on a clean profile, including `--dump-config` composition |
-| `pnpm dlx @deepseek-ai/dsh@0.2.1-alpha.1 plugin --profile <new> add github:...` | Verified — exercises the npm-published CLI and first-use profile initialization; `npx` is the equivalent form |
-| `dsh plugin --profile <p> remove superpowers-preset-dsh` | Verified: both the dependency and the `dsh.profile.bundles` entry are removed, and the preset leaves the composition |
-| End-to-end session comparison | Verified (above) |
-| **Option 1 "let DSH install it"** | **Not tested verbatim.** It hands the command line to an agent; success depends on that agent finding a usable `dsh`, and the profile restart is yours to do |
-| `npx @deepseek-ai/dsh ...` itself | **Not run on this machine** (its Volta npm installation is broken and `npx` cannot start). The equivalent path was verified with `pnpm dlx` against the same published CLI |
-
-Environment: DSH `0.2.1-alpha.1`, Windows, Node 24.18.1.
-
 ## License and credits
 
 MIT. The skill content is adapted from
