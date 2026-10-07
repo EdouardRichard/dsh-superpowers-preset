@@ -10,9 +10,11 @@ each release below.
 
 ## [Unreleased]
 
-Upstream skills unchanged (obra/superpowers **v6.4.2**). Not yet released. Run
-`node scripts/sync-preset-from-dsh.mjs <dsh-root> --check` before cutting a
-version.
+Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+No change to what the preset mounts or to any user-facing behaviour: this release
+strengthens the guarantees around the 1.0.1 fix and folds the difference
+documentation into the READMEs.
 
 ### Added
 
@@ -22,24 +24,24 @@ version.
   `npm run verify` fails when a mirrored row's config, `isolate` map,
   `disabled` expression, or nested rows were edited by hand. Presence alone was
   not enough: the guarantee is "Standard plus Superpowers", not "a preset that
-  mounts the same row ids".
+  mounts the same row ids". Negative-tested against both a config edit
+  (`tool-web.searchTimeoutMs`) and a nested edit (the plan-mode section prose).
 - **Persona identity assertion.** `sync-preset-from-dsh.mjs` now fails when the
   shipped preset rewords its persona identity line or working-directory suffix,
   instead of silently shipping an older identity.
 - **`scripts/lib/rows.mjs`**, one shared row/block reader for the mirror script
   and the verifier — two scanners would produce false parity failures.
-- **`docs/parity.md`**, the complete difference list: the two deliberate
-  additions, the inherent third-party-preset differences (roster group,
-  unlocalized name, no in-card help buttons, not the new-task default), and the
-  effects that follow from scoping (catalog contents, name-collision
-  precedence, prompt size).
+- **A "differences from Standard" section in both READMEs**, covering the three
+  inherent third-party-preset differences (custom roster group, unlocalized name
+  and description, not the new-task default) and the two behavioural ones
+  (local skills win a name collision; the prompt is larger in this mode only).
 
 ### Changed
 
 - `npm run verify` reports block digests and the DSH version the snapshot came
   from, so a stale mirror is visible in the output rather than inferred.
 
-[Unreleased]: https://github.com/EdouardRichard/superpowers-preset-dsh/compare/v1.0.1...HEAD
+[1.0.2]: https://github.com/EdouardRichard/superpowers-preset-dsh/compare/v1.0.1...v1.0.2
 
 ## [1.0.1] — 2026-10-07
 

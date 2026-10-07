@@ -68,9 +68,15 @@ Because that class of loss is invisible, it is guarded three ways:
    check.
 
 The result is that this preset is **Standard plus Superpowers**, not a separate
-composition that happens to look similar. The complete difference list — the
-three deliberate additions, the inherent third-party differences, and the
-effects that follow from scoping — is in [parity.md](parity.md).
+composition that happens to look similar.
+
+Three differences remain, and none of them can be changed from a bundle: DSH
+files this preset under the **custom** roster group rather than built-in
+(`isBuiltInPreset` accepts only a row that publishes no `name` whose id is one of
+the shipped four), its name and description are **literal** strings rather than
+localized ones, and it is **not the new-task default**
+(`agent-preset-registry.config.default: standard`). The README states them for
+users.
 
 ## Why the bootstrap is a persona, not a message
 

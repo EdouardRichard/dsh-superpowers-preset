@@ -1,6 +1,6 @@
 {
   "name": "superpowers-preset-dsh",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Superpowers as a DeepSeek Harness agent preset: the full obra/superpowers engineering methodology in one selectable mode, with its skills and workflow rules scoped to that mode.",
   "type": "module",
   "license": "MIT",

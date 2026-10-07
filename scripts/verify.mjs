@@ -81,7 +81,7 @@ if (typeof pkg.exports?.['./skills'] !== 'string') {
   ok(`skill provider entry: ${pkg.exports['./skills']}`)
 }
 
-for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/parity.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml', 'preset/standard-parity.json']) {
+for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml', 'preset/standard-parity.json']) {
   if (!(await stat(join(pkgRoot, required)).catch(() => null))?.isFile()) fail(`${required} is missing`)
 }
 if (!(pkg.files ?? []).includes('LICENSE') || !(pkg.files ?? []).includes('NOTICE.md')) {

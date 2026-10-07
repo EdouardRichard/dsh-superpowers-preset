@@ -261,18 +261,26 @@ So this preset guards that class of loss three ways:
 After a DSH upgrade, run `npm run sync:preset -- <path> --check` (reports drift,
 changes nothing), then `npm run verify`.
 
-**The full difference list — including the differences that cannot be changed —
-is in [docs/parity.md](docs/parity.md).** The three that matter most:
+### Three inherent differences from Standard
+
+These follow from the fact that DSH did not ship this preset; no bundle can
+change them:
 
 | Aspect | Standard | This mode |
 | --- | --- | --- |
-| Roster group | Built-in | Custom (a third-party preset cannot join the built-in group) |
+| Roster group | Built-in | Custom (`isBuiltInPreset` accepts only a row that publishes no `name` and whose id is one of the shipped four) |
 | Name / description | localized from DSH's dictionaries | literal strings; they do not follow the UI language |
 | New-task default | yes | no — pick it per task, or press "Set as new task default" in Settings |
 
-One more: when a local skill shares a name with a packaged one, **the local skill
-wins** (duplicate names resolve by rank within a layer; local roots rank 100–500,
-this package ranks 550), and DSH logs a warning.
+Two more, in behaviour rather than composition:
+
+- **A local skill with the same name wins.** This package and `skill-filesystem`
+  register into the same layer, and duplicate names resolve by rank inside a
+  layer (local roots 100–500, this package 550, the bundled root 600; lower
+  wins). A skill you write with the same name shadows the packaged one, and DSH
+  logs a warning.
+- **The prompt is bigger, in this mode only.** Measured during development:
+  system prompt 6130 → 9878 chars, skill catalog 2559 → 8356 chars.
 
 The full explanation — why the bootstrap is a persona rather than a session-start
 injection, and why the provider is a subpath export rather than the package root —
