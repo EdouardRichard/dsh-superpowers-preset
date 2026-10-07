@@ -2,11 +2,6 @@ MIT License
 
 Copyright (c) 2026 Edouard Richard and superpowers-preset-dsh contributors
 
-Portions of this software are derived from Superpowers
-(https://github.com/obra/superpowers), Copyright (c) 2025 Jesse Vincent,
-likewise under the MIT License. See NOTICE.md, which is part of this
-distribution, for the upstream licence text and the list of adaptations.
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -24,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Portions of this software are derived from Superpowers
+(https://github.com/obra/superpowers), Copyright (c) 2025 Jesse Vincent,
+likewise under the MIT License. NOTICE.md, part of this distribution,
+reproduces the upstream licence text and lists the adaptations.
