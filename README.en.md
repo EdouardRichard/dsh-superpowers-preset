@@ -64,8 +64,12 @@ Start a conversation in DSH and send:
 Install this plugin for me: https://github.com/EdouardRichard/superpowers-preset-dsh
 ```
 
-It will install the bundle and restart the profile; refresh your browser
-afterwards.
+It will run `dsh plugin ... add` and verify the composition. **It cannot restart
+the profile for you** — that would kill the session it is running in. Restart the
+profile yourself and refresh the browser.
+
+> Prerequisite: the agent needs a usable `dsh`. If yours is not on `PATH`, paste
+> it the full command from Option 2 instead.
 
 ### Option 2 — the command line
 
@@ -73,14 +77,20 @@ afterwards.
 dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
 ```
 
-Without a global `dsh`, use `npx`:
+Without a global `dsh`, run the same CLI through `npx`:
 
 ```sh
-npx @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
 ```
 
+> ⚠️ `npx` resolves npm's `latest` tag, which can **lag behind** the harness you
+> are running (npm currently has `latest = 0.2.0-rc.2` while this was verified on
+> `0.2.1-alpha.1`). Pin the version when they differ:
+> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.1 plugin ...`.
+> With pnpm, `pnpm dlx @deepseek-ai/dsh@<version> plugin ...` is equivalent.
+
 Replace `--profile` with the profile you actually run (`web`, `headless`, or your
-own).
+own). A profile that does not exist yet is initialized automatically.
 
 ### Option 3 — from a local checkout
 
@@ -89,8 +99,10 @@ git clone https://github.com/EdouardRichard/superpowers-preset-dsh
 dsh plugin --profile web add ./superpowers-preset-dsh
 ```
 
-A local directory installs as a **link**, not a copy, so your edits take effect on
-the next profile restart — convenient while customising.
+A relative path resolves against the directory you run the command from, and is
+recorded as an absolute link to that directory. A local directory installs as a
+**link**, not a copy, so your edits take effect on the next profile restart —
+convenient while customising.
 
 ### A restart is required
 
@@ -334,7 +346,21 @@ transcripts:
   its skill catalog lists all 15 skills;
 - the Standard task's system prompt does not, and its catalog does not.
 
-That is exactly how `1.0.0` was verified.
+### What `1.0.0` actually exercised
+
+| Item | Status |
+| --- | --- |
+| `npm run verify` | 8 checks pass |
+| `dsh plugin --profile <p> add <absolute local path>` | Verified |
+| `dsh plugin --profile <p> add ./relative-path` | Verified (resolved against the invoking directory, recorded as an absolute link) |
+| `dsh plugin --profile <p> add github:EdouardRichard/superpowers-preset-dsh` | Verified on a clean profile, including `--dump-config` composition |
+| `pnpm dlx @deepseek-ai/dsh@0.2.1-alpha.1 plugin --profile <new> add github:...` | Verified — exercises the npm-published CLI and first-use profile initialization; `npx` is the equivalent form |
+| `dsh plugin --profile <p> remove superpowers-preset-dsh` | Verified: both the dependency and the `dsh.profile.bundles` entry are removed, and the preset leaves the composition |
+| End-to-end session comparison | Verified (above) |
+| **Option 1 "let DSH install it"** | **Not tested verbatim.** It hands the command line to an agent; success depends on that agent finding a usable `dsh`, and the profile restart is yours to do |
+| `npx @deepseek-ai/dsh ...` itself | **Not run on this machine** (its Volta npm installation is broken and `npx` cannot start). The equivalent path was verified with `pnpm dlx` against the same published CLI |
+
+Environment: DSH `0.2.1-alpha.1`, Windows, Node 24.18.1.
 
 ## License and credits
 

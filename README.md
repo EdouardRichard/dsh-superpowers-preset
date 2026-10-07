@@ -59,7 +59,11 @@
 帮我安装这个插件：https://github.com/EdouardRichard/superpowers-preset-dsh
 ```
 
-它会完成安装并重启 profile，你刷新浏览器即可。
+它会调用 `dsh plugin ... add` 完成安装并验证组合。**但它不能替你重启 profile**
+——重启会终止它自己所在的会话。所以装完你要手动重启并刷新浏览器。
+
+> 前提：Agent 能找到一个可用的 `dsh`。如果你的 `dsh` 没有加到 `PATH`，
+> 把下面方式二里的完整命令直接发给它更稳妥。
 
 ### 方式二：命令行
 
@@ -68,13 +72,20 @@
 dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
 ```
 
-没有全局安装 `dsh` 时，用 `npx`：
+`dsh` 没有在 `PATH` 里时，用 `npx` 跑同一个 CLI：
 
 ```sh
-npx @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
 ```
 
-`--profile` 换成你实际用的 profile（`web` / `headless` / 自定义）。
+> ⚠️ `npx` 默认取 npm 的 `latest` 标签，它可能**落后于**你正在运行的
+> harness（例如 npm 上 `latest = 0.2.0-rc.2`，而你在跑 `0.2.1-alpha.1`）。
+> 版本对不上时显式指定，例如
+> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.1 plugin ...`。
+> 用 pnpm 的话，`pnpm dlx @deepseek-ai/dsh@<版本> plugin ...` 等价。
+
+`--profile` 换成你实际用的 profile（`web` / `headless` / 自定义）。profile 不存在时
+会被自动初始化。
 
 ### 方式三：从本地目录安装
 
@@ -83,7 +94,8 @@ git clone https://github.com/EdouardRichard/superpowers-preset-dsh
 dsh plugin --profile web add ./superpowers-preset-dsh
 ```
 
-本地目录是 **link 安装**（不是复制），改完这个目录重启 profile 就生效，方便自己改。
+相对路径按**你执行命令时所在的目录**解析，安装后记为该目录的绝对 link。本地目录是
+**link 安装**（不是复制），改完这个目录重启 profile 就生效，方便自己改。
 
 ### 装完要重启
 
@@ -97,7 +109,8 @@ dsh --profile web --dump-config | Select-String superpowers-preset-dsh
 ```
 
 输出里应该能看到 `- id: preset-superpowers` 这一段，以及
-`name: superpowers-preset-dsh/skills` 这一行。
+`name: superpowers-preset-dsh/skills` 这一行。看到这两行说明层已经组合进
+profile；重启后新建任务时就能在模式列表里选到「Superpowers」。
 
 ### 卸载
 
@@ -306,7 +319,21 @@ dsh --profile sptest --port 3099 --no-open
   这 15 个技能；
 - 标准模式任务的系统提示词里没有它，技能目录里也没有它们。
 
-本仓库的 `1.0.0` 就是这么验的。
+### `1.0.0` 实际验过什么
+
+| 项目 | 状态 |
+| --- | --- |
+| `npm run verify` | 8 项检查通过 |
+| `dsh plugin --profile <p> add <本地绝对路径>` | 实测通过 |
+| `dsh plugin --profile <p> add ./相对路径` | 实测通过（按执行目录解析为绝对 link） |
+| `dsh plugin --profile <p> add github:EdouardRichard/superpowers-preset-dsh` | 实测通过（干净 profile，含 `--dump-config` 组合校验） |
+| `pnpm dlx @deepseek-ai/dsh@0.2.1-alpha.1 plugin --profile <新 profile> add github:...` | 实测通过（验证 npm 已发布 CLI + 首次自动初始化 profile；`npx` 形式与此等价） |
+| `dsh plugin --profile <p> remove superpowers-preset-dsh` | 实测通过：依赖与 `dsh.profile.bundles` 条目一并移除，组合里不再有该预设 |
+| 端到端会话对比 | 实测通过（见上） |
+| **方式一「让 DSH 自己装」** | **未逐字实测**。它是把命令行交给 Agent 执行，能否成功取决于 Agent 能否找到可用的 `dsh`；重启 profile 必须由你手动做 |
+| `npx @deepseek-ai/dsh ...` 本身 | **未在本机实测**（本机 Volta 的 npm 安装已损坏，`npx` 无法运行）；已用 `pnpm dlx` 跑同一个已发布 CLI 验证等价路径 |
+
+验证环境：DSH `0.2.1-alpha.1`，Windows，Node 24.18.1。
 
 ## 许可证与致谢
 
