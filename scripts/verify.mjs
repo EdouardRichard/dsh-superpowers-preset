@@ -137,7 +137,19 @@ for (const specifier of specifiers) {
 if (!specifiers.includes('superpowers-preset-dsh/skills')) {
   fail('the preset does not mount superpowers-preset-dsh/skills, so the mode would have no Superpowers skills')
 }
-ok(`plugin rows: ${specifiers.length} specifiers, all resolvable`)
+// The entire point of this package is that the provider is mounted *inside the
+// preset*, never as a host row. A top-level row naming this package would
+// register the catalog into the global skill layer, putting it in every
+// session's system prompt — the exact behaviour this package exists to avoid.
+const hostLevelSpecifiers = [...patchText.matchAll(/^ {6}name:\s*'([^']+)'\s*$/gm)].map(match => match[1])
+const leaked = hostLevelSpecifiers.filter(specifier => specifier.startsWith('superpowers-preset-dsh'))
+if (leaked.length > 0) {
+  fail(
+    `cordis.patch.yml mounts ${leaked.join(', ')} as a host-level row. ` +
+    'The skill provider must stay inside the preset\'s plugin list, or its skills leak into every session.',
+  )
+}
+ok(`plugin rows: ${specifiers.length} specifiers, all resolvable; provider is preset-scoped (host rows: ${hostLevelSpecifiers.join(', ')})`)
 
 // --------------------------------------------------------------- bootstrap --
 
