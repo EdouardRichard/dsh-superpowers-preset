@@ -8,6 +8,39 @@ The bundled skill content tracks `obra/superpowers`; the synced upstream version
 is recorded in `package.json` under `dsh.superpowersUpstream.tag` and repeated in
 each release below.
 
+## [Unreleased]
+
+Upstream skills unchanged (obra/superpowers **v6.4.2**). Not yet released. Run
+`node scripts/sync-preset-from-dsh.mjs <dsh-root> --check` before cutting a
+version.
+
+### Added
+
+- **Byte-level parity with the shipped Standard preset.**
+  `preset/standard-parity.json` now records a sha256 for every top-level row
+  block of `packages/bundle/web-app/presets/standard.patch.yml`, and
+  `npm run verify` fails when a mirrored row's config, `isolate` map,
+  `disabled` expression, or nested rows were edited by hand. Presence alone was
+  not enough: the guarantee is "Standard plus Superpowers", not "a preset that
+  mounts the same row ids".
+- **Persona identity assertion.** `sync-preset-from-dsh.mjs` now fails when the
+  shipped preset rewords its persona identity line or working-directory suffix,
+  instead of silently shipping an older identity.
+- **`scripts/lib/rows.mjs`**, one shared row/block reader for the mirror script
+  and the verifier — two scanners would produce false parity failures.
+- **`docs/parity.md`**, the complete difference list: the two deliberate
+  additions, the inherent third-party-preset differences (roster group,
+  unlocalized name, no in-card help buttons, not the new-task default), and the
+  effects that follow from scoping (catalog contents, name-collision
+  precedence, prompt size).
+
+### Changed
+
+- `npm run verify` reports block digests and the DSH version the snapshot came
+  from, so a stale mirror is visible in the output rather than inferred.
+
+[Unreleased]: https://github.com/EdouardRichard/superpowers-preset-dsh/compare/v1.0.1...HEAD
+
 ## [1.0.1] — 2026-10-07
 
 Upstream skills unchanged (obra/superpowers **v6.4.2**).

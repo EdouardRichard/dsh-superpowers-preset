@@ -150,6 +150,8 @@ request on the DSH repository is the right channel; until then, this
 
 ## 4. See also
 
+- [Parity with the Standard preset](parity.md) — item by item: what is mirrored
+  exactly, what this package adds, and what no third-party preset can change.
 - [Architecture](architecture.md) — how this preset is assembled and how the
   isolation works.
 - [Compared with the plugin approach](plugin-vs-preset.md) — the tradeoffs.

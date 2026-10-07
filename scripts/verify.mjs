@@ -25,6 +25,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
 import {
   IDENTITY,
   PERSONA_SUFFIX,
@@ -80,7 +81,7 @@ if (typeof pkg.exports?.['./skills'] !== 'string') {
   ok(`skill provider entry: ${pkg.exports['./skills']}`)
 }
 
-for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml', 'preset/standard-parity.json']) {
+for (const required of ['LICENSE', 'NOTICE.md', 'README.md', 'README.en.md', 'CHANGELOG.md', 'docs/guide.zh.md', 'docs/guide.en.md', 'docs/architecture.md', 'docs/parity.md', 'docs/plugin-vs-preset.md', 'examples/profile-override.patch.yml', 'preset/standard-parity.json']) {
   if (!(await stat(join(pkgRoot, required)).catch(() => null))?.isFile()) fail(`${required} is missing`)
 }
 if (!(pkg.files ?? []).includes('LICENSE') || !(pkg.files ?? []).includes('NOTICE.md')) {
@@ -157,34 +158,7 @@ ok(`plugin rows: ${specifiers.length} specifiers, all resolvable; provider is pr
 // preset that forgets it silently loses every project and user skill. The
 // snapshot records what the shipped preset carries so that loss fails the build.
 const parity = await readJson(join(pkgRoot, 'preset', 'standard-parity.json'))
-
-/**
- * Every row (id plus module name) a patch file mounts, nested groups included.
- * The scan is indentation-based because a preset's `config.plugins` is a plain
- * YAML list, not a Loader row set.
- * @param text - bundle patch contents.
- * @returns rows that resolved both an id and a module name.
- */
-function presetRows(text) {
-  const rows = []
-  for (const line of text.split('\n')) {
-    const id = /^( +)- id: ([\w-]+)\s*$/.exec(line)
-    if (id !== null) {
-      rows.push({ indent: id[1].length, id: id[2], name: undefined })
-      continue
-    }
-    const name = /^( +)name: (.+?)\s*$/.exec(line)
-    if (name !== null && rows.length > 0) {
-      const last = rows[rows.length - 1]
-      if (last.name === undefined && name[1].length === last.indent + 2) {
-        last.name = name[2].replace(/^'(.*)'$/, '$1')
-      }
-    }
-  }
-  return rows.filter(row => row.name !== undefined)
-}
-
-const shippedKeys = new Set(presetRows(patchText).map(row => `${row.id}|${row.name}`))
+const shippedKeys = new Set(collectRows(patchText).map(row => `${row.id}|${row.name}`))
 if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
   fail('preset/standard-parity.json carries no rows; refresh it with scripts/sync-preset-from-dsh.mjs')
 } else {
@@ -197,7 +171,28 @@ if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
       'or record the deliberate removal in the README compatibility table.',
     )
   }
-  ok(`standard parity: all ${parity.rows.length} shipped rows present, plus this package's own provider`)
+  // Presence is not enough: the point of the mirror is that each row says the
+  // same thing here as in the shipped preset. Hashing the whole top-level block
+  // covers every config value, isolate map, disabled expression, and nested row.
+  const ours = new Map(topLevelBlocks(patchText).map(block => [block.id, blockDigest(block.text)]))
+  const altered = (parity.blocks ?? [])
+    .filter(block => ours.has(block.id) && ours.get(block.id) !== block.sha256)
+    .map(block => block.id)
+  if (!Array.isArray(parity.blocks) || parity.blocks.length === 0) {
+    fail('preset/standard-parity.json carries no block digests; refresh it with scripts/sync-preset-from-dsh.mjs')
+  }
+  if (altered.length > 0) {
+    fail(
+      `the preset's copy of ${altered.length} mirrored row(s) no longer matches the shipped standard ` +
+      `preset: ${altered.join(', ')}.\n` +
+      '    Hand-editing a mirrored row breaks the "Standard plus Superpowers" guarantee — put local ' +
+      'changes in a profile patch instead, or re-mirror with scripts/sync-preset-from-dsh.mjs.',
+    )
+  }
+  ok(
+    `standard parity: ${parity.rows.length} rows present and ${parity.blocks.length} blocks byte-identical ` +
+    `(snapshot from DSH ${parity.dshVersion}), plus this package's own provider`,
+  )
 }
 
 // --------------------------------------------------------------- bootstrap --

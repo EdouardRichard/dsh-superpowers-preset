@@ -59,14 +59,18 @@ Because that class of loss is invisible, it is guarded three ways:
    byte. Run it after every DSH upgrade.
 2. **A committed snapshot gates the build.** `preset/standard-parity.json`
    records every row the shipped preset carries (id, module, and whether
-   Standard disables it). `npm run verify` fails if this preset stops mounting
-   any of them.
+   Standard disables it) *plus a sha256 per top-level row block*. `npm run
+   verify` fails if this preset stops mounting a row **or** if a mirrored row's
+   config, `isolate` map, `disabled` expression, or nested rows were edited. The
+   persona identity line and suffix are asserted the same way.
 3. **The failure mode is named in the diagnostic**, so the next person to hit it
    reads *why* a missing row is a missing capability rather than deleting the
    check.
 
 The result is that this preset is **Standard plus Superpowers**, not a separate
-composition that happens to look similar.
+composition that happens to look similar. The complete difference list — the
+three deliberate additions, the inherent third-party differences, and the
+effects that follow from scoping — is in [parity.md](parity.md).
 
 ## Why the bootstrap is a persona, not a message
 

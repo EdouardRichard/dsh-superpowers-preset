@@ -230,10 +230,25 @@ cordis.patch.yml
    `npm run sync:preset -- <dsh 源码目录>` 直接从官方 `standard` 预设重建插件清单，
    只保留本包自己的两行（persona 和 Superpowers provider），其余逐字节照抄。
 2. **提交了快照，卡在构建上。** `preset/standard-parity.json` 记录官方预设携带的
-   每一行；`npm run verify` 一旦发现本预设少了任何一行就失败。
-3. **失败信息会解释原因**，免得后来的人顺手把检查删掉。
+   每一行，并对每个顶层行块做 sha256；`npm run verify` 一旦发现少一行、或者某个
+   镜像行的 config / isolate / disabled / 嵌套子行被改过，就失败。
+3. **persona 身份行也被断言**：官方预设改了身份行或 working-directory 后缀，
+   `sync:preset` 会报错，而不是悄悄用旧身份继续发布。
 
-升级 DSH 后重跑 `npm run sync:preset -- <path>`，然后 `npm run verify` 即可。
+升级 DSH 后重跑 `npm run sync:preset -- <path> --check`（只报告不改动），再
+`npm run verify`。
+
+**与标准预设的完整差异清单（含无法改变的固有差异）见
+[docs/parity.md](docs/parity.md)。** 三条最需要知道的：
+
+| 方面 | 标准模式 | 本模式 |
+| --- | --- | --- |
+| 分组 | 内置 | 自定义（第三方预设无法进入内置组） |
+| 名称/描述 | 随界面语言本地化 | 声明里的字面量，不随语言变化 |
+| 新任务默认 | 是 | 否——要在新建任务时手动选，或在设置里「设为新任务默认」 |
+
+另外：本地技能与本包同名时**本地技能优先**（同一层内按 rank，本地 100–500 <
+本包 550），DSH 会记一条 warning。
 
 完整说明（包括为什么 bootstrap 用 persona 而不是会话开始时的注入、为什么
 provider 用子路径导出而不是包根）见 [docs/architecture.md](docs/architecture.md)。

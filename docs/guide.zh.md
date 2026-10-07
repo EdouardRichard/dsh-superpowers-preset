@@ -130,6 +130,8 @@ patch 也只能覆盖 `config` / `disabled` / `inject` / `intercept` / `isolate`
 
 ## 四、相关文档
 
+- [与标准预设的差异](parity.md) —— 逐项列出什么是完全照搬、什么是本包新增、
+  什么是第三方预设无法改变的固有差异。
 - [架构说明](architecture.md) —— 这个预设为什么这样组装，隔离是怎么做到的。
 - [与插件模式的对比](plugin-vs-preset.md) —— 两种集成方式的取舍。
 - [README](../README.md) —— 安装、升级、卸载、自定义。

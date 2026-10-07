@@ -251,13 +251,28 @@ So this preset guards that class of loss three ways:
    the shipped `standard` preset, keeping only this package's own two rows (the
    persona and the Superpowers provider) and copying the rest byte for byte.
 2. **A committed snapshot gates the build.** `preset/standard-parity.json`
-   records every row Standard carries, and `npm run verify` fails the moment this
-   preset stops mounting one.
-3. **The diagnostic explains itself**, so the next person to hit it reads why a
-   missing row is a missing capability instead of deleting the check.
+   records every row Standard carries plus a sha256 per top-level row block, and
+   `npm run verify` fails if a row goes missing *or* if any mirrored row's
+   config, `isolate` map, `disabled` expression, or nested rows were edited.
+3. **The persona identity is asserted too**: if DSH rewords the identity line or
+   the working-directory suffix, `sync:preset` fails rather than quietly shipping
+   an older identity.
 
-After a DSH upgrade, re-run `npm run sync:preset -- <path>` and then
-`npm run verify`.
+After a DSH upgrade, run `npm run sync:preset -- <path> --check` (reports drift,
+changes nothing), then `npm run verify`.
+
+**The full difference list — including the differences that cannot be changed —
+is in [docs/parity.md](docs/parity.md).** The three that matter most:
+
+| Aspect | Standard | This mode |
+| --- | --- | --- |
+| Roster group | Built-in | Custom (a third-party preset cannot join the built-in group) |
+| Name / description | localized from DSH's dictionaries | literal strings; they do not follow the UI language |
+| New-task default | yes | no — pick it per task, or press "Set as new task default" in Settings |
+
+One more: when a local skill shares a name with a packaged one, **the local skill
+wins** (duplicate names resolve by rank within a layer; local roots rank 100–500,
+this package ranks 550), and DSH logs a warning.
 
 The full explanation — why the bootstrap is a persona rather than a session-start
 injection, and why the provider is a subpath export rather than the package root —

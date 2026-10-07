@@ -1,6 +1,7 @@
 {
-  "$comment": "Snapshot of every plugin row the shipped `standard` preset carries, taken from a DSH source checkout. scripts/verify.mjs fails when this preset stops covering one of them, because a missing row means missing capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>",
+  "$comment": "Snapshot of the shipped `standard` preset, taken from a DSH source checkout. `rows` names every row it carries so a missing one can be reported by name; `blocks` records a sha256 per top-level row block, so scripts/verify.mjs also catches a mirrored row whose config, isolate map, disabled expression, or nested rows were edited by hand. A missing or altered row is a missing or altered capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>",
   "source": "packages/bundle/web-app/presets/standard.patch.yml",
+  "dshVersion": "0.2.1-alpha.1",
   "rows": [
     {
       "id": "agent-instructions",
@@ -166,6 +167,88 @@
       "id": "tool-plugin-manager",
       "name": "@deepseek-ai/dsh-plugin-manager/tools",
       "disabledInStandard": true
+    }
+  ],
+  "blocks": [
+    {
+      "id": "agent-instructions",
+      "sha256": "bec4a41f8277684203dd6d03adb00befcb35b0506ccb2685837953668a8ac587"
+    },
+    {
+      "id": "time-context",
+      "sha256": "84b7ba8963c3d4b5f026b3cb731c63994e06909536a749a8c87dafcf8738b92d"
+    },
+    {
+      "id": "tool-bash",
+      "sha256": "57e2038c8dabab5d3f2f0680e7b7bbb406b9cf6e3a70c9d6b6a573588ff8dc57"
+    },
+    {
+      "id": "tool-pwsh",
+      "sha256": "472a1e46092a7cedd52dfe484b64e546ad7e1d92ea1cbad3d25a9a24586397da"
+    },
+    {
+      "id": "tool-fs",
+      "sha256": "eac4eb155e4fff6fd346a715012554839601b662e3e0fd6814adec10273e32e1"
+    },
+    {
+      "id": "tool-fs-search",
+      "sha256": "1bddd4340235de37ba531e418bd3089665cb121795a0c121cd5985162230bb96"
+    },
+    {
+      "id": "tool-jobs",
+      "sha256": "c6b0f62bce818d9a128a798f2c8873648afb31d56d618d525862c01de11dcd12"
+    },
+    {
+      "id": "tool-schedule",
+      "sha256": "6da634189a847e98bf9a0ec63e410f761dd5cd3a59c7558b25f719337f399b2d"
+    },
+    {
+      "id": "skill-filesystem",
+      "sha256": "6932bc5e4808a24a3f12b2f7983c3f7303eacedae55234ed1727dfb6ea3148e0"
+    },
+    {
+      "id": "tool-skill",
+      "sha256": "d132cb2a6d7588723ecd940b7afad16eb88f784f7fc9c3549292f3eb1c0ccf63"
+    },
+    {
+      "id": "command-goal",
+      "sha256": "83b93b724ae42f39c6c544bff855629b50db87c3012cd14661bfcd34b84705fe"
+    },
+    {
+      "id": "tool-goal",
+      "sha256": "06f8cb4910629d17da11a831db8e0ba3b560049d1735c2d1c03ca6187ff26465"
+    },
+    {
+      "id": "planning",
+      "sha256": "68c267caa484ce815fafdce1d6ef7b88a44d3c886ec030d46b5ca9459ef763cd"
+    },
+    {
+      "id": "compaction",
+      "sha256": "ec670a2face324790c53a009507373aeea44422087ca800b1f96b04e79173331"
+    },
+    {
+      "id": "delegation",
+      "sha256": "200e088f673ffb5ea9dd45dd39357dcf071b3c1d529e8a2d0ad7ffcf4510690e"
+    },
+    {
+      "id": "tool-ask-user",
+      "sha256": "f4001ff26a245a8cdb7ac1f3392c313839e5fa3572e4ad9c1457fe679de4d5fe"
+    },
+    {
+      "id": "tool-todo",
+      "sha256": "b47093e2888cbbc61c4655011fbd45b1110c41b69a5ad6368a4e9e4e6da32f40"
+    },
+    {
+      "id": "tool-web",
+      "sha256": "73f227d8e9fb24997fec52d37b5dfda07cd0c3522ac5ff25cf82ff2208ddca9c"
+    },
+    {
+      "id": "present",
+      "sha256": "2477c8f4dbe9c3ee38b9ce4026e2dbc0b96f4830d17784b13bc224b8099d871d"
+    },
+    {
+      "id": "tool-plugin-manager",
+      "sha256": "d66d1ee2d19c22b86a8a2e4a1152c4d3d9187c0664f9070f150c3e8176630087"
     }
   ]
 }

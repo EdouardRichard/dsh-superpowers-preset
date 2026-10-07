@@ -31,6 +31,8 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
+import { IDENTITY, PERSONA_SUFFIX } from './lib/preset.mjs'
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const patchPath = join(pkgRoot, 'cordis.patch.yml')
@@ -90,36 +92,6 @@ function takeBlock(entries, id) {
   }
 }
 
-/**
- * Collect every row id and module name a preset carries, including groups.
- * @param entries - the entry list text.
- * @returns flat rows with their nesting depth.
- */
-function collectRows(entries) {
-  const rows = []
-  for (const line of entries.split('\n')) {
-    const id = /^( +)- id: ([\w-]+)\s*$/.exec(line)
-    if (id !== null) {
-      rows.push({ indent: id[1].length, id: id[2], name: undefined, disabled: false })
-      continue
-    }
-    const name = /^( +)name: (.+?)\s*$/.exec(line)
-    if (name !== null && rows.length > 0) {
-      const last = rows[rows.length - 1]
-      if (last.name === undefined && name[1].length === last.indent + 2) {
-        last.name = name[2].replace(/^'(.*)'$/, '$1')
-      }
-      continue
-    }
-    const disabled = /^( +)disabled: (.*)$/.exec(line)
-    if (disabled !== null && rows.length > 0) {
-      const last = rows[rows.length - 1]
-      if (disabled[1].length === last.indent + 2) last.disabled = disabled[2].trim() !== 'false'
-    }
-  }
-  return rows.filter(row => row.name !== undefined)
-}
-
 const dshRoot = process.argv[2]
 const check = process.argv.includes('--check')
 if (dshRoot === undefined) {
@@ -136,9 +108,37 @@ if (standardText === undefined) {
 const standard = splitPlugins(standardText, standardPath)
 // Standard's own additions are not ours to keep: we mirror everything except
 // the persona, which this port extends with the Superpowers bootstrap.
-for (const id of ['persona']) {
-  const taken = takeBlock(standard.entries, id)
-  standard.rest = taken.rest
+const shippedPersona = takeBlock(standard.entries, 'persona').block
+standard.rest = takeBlock(standard.entries, 'persona').rest
+
+// Our persona must be Standard's persona plus the bootstrap, so the identity
+// line and working-directory suffix have to match the shipped ones exactly. If
+// DSH rewords them, this port has to decide whether to follow before the mirror
+// silently ships an older identity.
+const shippedPrefix = /^\s+prefix:[ \t]*(.+?)[ \t]*$/m.exec(shippedPersona)?.[1]
+const shippedSuffix = /^\s+suffix:[ \t]*(.+?)[ \t]*$/m.exec(shippedPersona)?.[1]
+if (shippedPrefix === undefined || shippedPrefix === '|' || shippedPrefix === '>-' || shippedPrefix === '|-') {
+  fail(
+    'the shipped standard preset no longer carries a single-line persona `prefix`.\n' +
+    `  Found: ${JSON.stringify(shippedPrefix)}\n` +
+    '  Update IDENTITY in scripts/lib/preset.mjs to match, then re-run.',
+  )
+}
+if (shippedPrefix !== IDENTITY) {
+  fail(
+    'the shipped standard preset changed its persona identity line.\n' +
+    `  shipped: ${JSON.stringify(shippedPrefix)}\n` +
+    `  ours   : ${JSON.stringify(IDENTITY)}\n` +
+    '  Update IDENTITY in scripts/lib/preset.mjs so this preset keeps Standard\'s identity, then re-run.',
+  )
+}
+if (shippedSuffix !== PERSONA_SUFFIX) {
+  fail(
+    'the shipped standard preset changed its persona suffix.\n' +
+    `  shipped: ${JSON.stringify(shippedSuffix)}\n` +
+    `  ours   : ${JSON.stringify(PERSONA_SUFFIX)}\n` +
+    '  Update PERSONA_SUFFIX in scripts/lib/preset.mjs, then re-run `npm run sync:bootstrap`.',
+  )
 }
 
 const ours = splitPlugins(await readFile(patchPath, 'utf8'), patchPath)
@@ -186,13 +186,22 @@ const header = ours.header.replace(/\n+$/, '')
 const nextText = `${header}\n        plugins:\n${additions}\n${mirrored}\n`
 
 const standardRows = collectRows(standard.rest)
+const standardBlocks = topLevelBlocks(standard.rest)
+
+/** The DSH release the mirror was taken from, when the checkout reports one. */
+const dshVersion = JSON.parse(await readFile(join(resolve(dshRoot), 'package.json'), 'utf8').catch(() => '{}')).version
+
 const parity = {
   $comment:
-    'Snapshot of every plugin row the shipped `standard` preset carries, taken from a DSH source ' +
-    'checkout. scripts/verify.mjs fails when this preset stops covering one of them, because a ' +
-    'missing row means missing capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>',
+    'Snapshot of the shipped `standard` preset, taken from a DSH source checkout. `rows` names every ' +
+    'row it carries so a missing one can be reported by name; `blocks` records a sha256 per top-level ' +
+    'row block, so scripts/verify.mjs also catches a mirrored row whose config, isolate map, disabled ' +
+    'expression, or nested rows were edited by hand. A missing or altered row is a missing or altered ' +
+    'capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>',
   source: STANDARD_PRESET,
+  dshVersion: dshVersion ?? 'unknown',
   rows: standardRows.map(row => ({ id: row.id, name: row.name, disabledInStandard: row.disabled })),
+  blocks: standardBlocks.map(block => ({ id: block.id, sha256: blockDigest(block.text) })),
 }
 
 const currentText = await readFile(patchPath, 'utf8')
