@@ -2,8 +2,7 @@
 
 [简体中文](README.md) | **English**
 
-# superpowers-preset-dsh
-
+# dsh-superpowers-preset
 The complete [obra/superpowers](https://github.com/obra/superpowers) development
 methodology, packaged as a **DeepSeek Harness (DSH) agent preset**.
 
