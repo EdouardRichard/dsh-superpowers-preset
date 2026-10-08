@@ -6,7 +6,7 @@ bundle adds a selectable mode to DSH. Nothing in it touches the host layer, so
 installing it changes no existing session's behaviour.
 
 ```
-superpowers-preset-dsh/
+dsh-superpowers-preset/
 ├── package.json          dsh.bundle.patch → cordis.patch.yml
 ├── cordis.patch.yml      the whole installation: one preset declaration
 ├── lib/
@@ -31,7 +31,7 @@ superpowers-preset-dsh/
 | Row | Why it is there |
 | --- | --- |
 | `persona` | Carries the bootstrap. `dsh-persona` registers it as this scope's `deployment:persona-prefix` section, shadowing the deployment default. |
-| `superpowers-preset-dsh/skills` | Registers the packaged skill catalog into this preset's skill layer. |
+| `dsh-superpowers-preset/skills` | Registers the packaged skill catalog into this preset's skill layer. |
 | `skill-filesystem` | The **local** skill provider: project `.dsh/skills` and `.agents/skills`, user `$DSH_HOME/skills` and `~/.agents/skills`. |
 | `tool-skill` | Renders the catalog and provides the `skill` loader. |
 | `agent-instructions`, `time-context` | `AGENTS.md` loading and the runtime clock, matching the shipped Standard preset. |
@@ -103,7 +103,7 @@ it, `scripts/sync-from-upstream.mjs` re-renders it after every upstream sync, an
 
 ## Why the provider is a subpath, not the package root
 
-`package.json` exports the provider at `superpowers-preset-dsh/skills`, and the
+`package.json` exports the provider at `dsh-superpowers-preset/skills`, and the
 preset mounts it by that specifier. The package root (`lib/index.js`) is a
 different module and does nothing on the host side.
 
@@ -112,7 +112,7 @@ mounted as a host row — the obvious thing to do, and what a plugin-shaped port
 does — `registerProvider()` would file it into the global layer, and the
 Superpowers catalog would appear in every session's system prompt. That is
 precisely the behaviour this package exists to avoid. Mounting it as
-`superpowers-preset-dsh/skills` inside the preset's composition files it into the
+`dsh-superpowers-preset/skills` inside the preset's composition files it into the
 preset's own layer instead.
 
 The root export is kept for the browser half (see below), which needs a loader

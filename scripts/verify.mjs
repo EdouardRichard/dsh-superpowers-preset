@@ -61,7 +61,7 @@ async function readJson(path) {
 
 const pkg = await readJson(join(pkgRoot, 'package.json'))
 
-if (pkg.name !== 'superpowers-preset-dsh') fail(`package.json name is "${pkg.name}", expected "superpowers-preset-dsh"`)
+if (pkg.name !== 'dsh-superpowers-preset') fail(`package.json name is "${pkg.name}", expected "dsh-superpowers-preset"`)
 if (pkg.license !== 'MIT') fail(`package.json license is "${pkg.license}", expected "MIT"`)
 
 const patchRel = pkg.dsh?.bundle?.patch
@@ -74,7 +74,7 @@ if (typeof patchRel !== 'string') {
 }
 
 if (typeof pkg.exports?.['./skills'] !== 'string') {
-  fail('package.json exports no "./skills" subpath; the preset mounts superpowers-preset-dsh/skills')
+  fail('package.json exports no "./skills" subpath; the preset mounts dsh-superpowers-preset/skills')
 } else if (!(await stat(join(pkgRoot, pkg.exports['./skills'])).catch(() => null))?.isFile()) {
   fail(`exports["./skills"] points at "${pkg.exports['./skills']}", which does not exist`)
 } else {
@@ -126,7 +126,7 @@ if (!/^ {8}order: \d+$/m.test(patchText)) {
 }
 
 // Every plugin specifier must be resolvable at load time.
-const KNOWN_SPECIFIER = /^(@deepseek-ai\/[\w.-]+(\/[\w.-]+)?|cordis:[\w-]+|superpowers-preset-dsh(\/[\w.-]+)?)$/
+const KNOWN_SPECIFIER = /^(@deepseek-ai\/[\w.-]+(\/[\w.-]+)?|cordis:[\w-]+|dsh-superpowers-preset(\/[\w.-]+)?)$/
 const specifiers = [...patchText.matchAll(/^\s+name:\s*'([^']+)'\s*$/gm)].map(match => match[1])
 if (specifiers.length === 0) fail('cordis.patch.yml names no plugins')
 for (const specifier of specifiers) {
@@ -135,15 +135,15 @@ for (const specifier of specifiers) {
     fail(`plugin specifier "${specifier}" is neither a harness package, a cordis primitive, nor a subpath of this package`)
   }
 }
-if (!specifiers.includes('superpowers-preset-dsh/skills')) {
-  fail('the preset does not mount superpowers-preset-dsh/skills, so the mode would have no Superpowers skills')
+if (!specifiers.includes('dsh-superpowers-preset/skills')) {
+  fail('the preset does not mount dsh-superpowers-preset/skills, so the mode would have no Superpowers skills')
 }
 // The entire point of this package is that the provider is mounted *inside the
 // preset*, never as a host row. A top-level row naming this package would
 // register the catalog into the global skill layer, putting it in every
 // session's system prompt — the exact behaviour this package exists to avoid.
 const hostLevelSpecifiers = [...patchText.matchAll(/^ {6}name:\s*'([^']+)'\s*$/gm)].map(match => match[1])
-const leaked = hostLevelSpecifiers.filter(specifier => specifier.startsWith('superpowers-preset-dsh'))
+const leaked = hostLevelSpecifiers.filter(specifier => specifier.startsWith('dsh-superpowers-preset'))
 if (leaked.length > 0) {
   fail(
     `cordis.patch.yml mounts ${leaked.join(', ')} as a host-level row. ` +

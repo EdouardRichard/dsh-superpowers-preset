@@ -1,6 +1,6 @@
 # Notices and third-party licenses
 
-`superpowers-preset-dsh` is an independent, community-maintained port. It is not
+`dsh-superpowers-preset` is an independent, community-maintained port. It is not
 affiliated with, endorsed by, or published by the Superpowers project or by
 DeepSeek.
 

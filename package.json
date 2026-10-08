@@ -1,17 +1,17 @@
 {
-  "name": "superpowers-preset-dsh",
-  "version": "1.0.2",
+  "name": "dsh-superpowers-preset",
+  "version": "1.0.3",
   "description": "Superpowers as a DeepSeek Harness agent preset: the full obra/superpowers engineering methodology in one selectable mode, with its skills and workflow rules scoped to that mode.",
   "type": "module",
   "license": "MIT",
   "author": "Edouard Richard",
-  "homepage": "https://github.com/EdouardRichard/superpowers-preset-dsh#readme",
+  "homepage": "https://github.com/EdouardRichard/dsh-superpowers-preset#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EdouardRichard/superpowers-preset-dsh.git"
+    "url": "git+https://github.com/EdouardRichard/dsh-superpowers-preset.git"
   },
   "bugs": {
-    "url": "https://github.com/EdouardRichard/superpowers-preset-dsh/issues"
+    "url": "https://github.com/EdouardRichard/dsh-superpowers-preset/issues"
   },
   "main": "lib/index.js",
   "exports": {

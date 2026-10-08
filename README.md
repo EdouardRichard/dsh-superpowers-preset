@@ -56,7 +56,7 @@
 在 DSH 里新建对话，把这句话发给它：
 
 ```
-帮我安装这个插件：https://github.com/EdouardRichard/superpowers-preset-dsh
+帮我安装这个插件：https://github.com/EdouardRichard/dsh-superpowers-preset
 ```
 
 它会调用 `dsh plugin ... add` 完成安装并验证组合。**但它不能替你重启 profile**
@@ -69,13 +69,13 @@
 
 ```sh
 # 从 GitHub 安装
-dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 
 `dsh` 没有在 `PATH` 里时，用 `npx` 跑同一个 CLI：
 
 ```sh
-npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 
 > ⚠️ `npx` 默认取 npm 的 `latest` 标签，它可能**落后于**你正在运行的
@@ -90,8 +90,8 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superp
 ### 方式三：从本地目录安装
 
 ```sh
-git clone https://github.com/EdouardRichard/superpowers-preset-dsh
-dsh plugin --profile web add ./superpowers-preset-dsh
+git clone https://github.com/EdouardRichard/dsh-superpowers-preset
+dsh plugin --profile web add ./dsh-superpowers-preset
 ```
 
 相对路径按**你执行命令时所在的目录**解析，安装后记为该目录的绝对 link。本地目录是
@@ -105,17 +105,17 @@ bundle 层在 profile 启动时挂载，所以要**重启 profile**（关掉再�
 ### 验证装好了
 
 ```sh
-dsh --profile web --dump-config | Select-String superpowers-preset-dsh
+dsh --profile web --dump-config | Select-String dsh-superpowers-preset
 ```
 
 输出里应该能看到 `- id: preset-superpowers` 这一段，以及
-`name: superpowers-preset-dsh/skills` 这一行。看到这两行说明层已经组合进
+`name: dsh-superpowers-preset/skills` 这一行。看到这两行说明层已经组合进
 profile；重启后新建任务时就能在模式列表里选到「Superpowers」。
 
 ### 卸载
 
 ```sh
-dsh plugin --profile web remove superpowers-preset-dsh
+dsh plugin --profile web remove dsh-superpowers-preset
 ```
 
 卸载同样需要重启 profile。
@@ -203,14 +203,14 @@ DSH 内置的四个预设（标准 / PTC / 极简 / 创造）卡片上有「模�
 ## 工作原理
 
 一句话：`cordis.patch.yml` 往 profile 的组合里插入**一行** agent-preset
-声明；这一行里挂的 skill provider 是 `superpowers-preset-dsh/skills`，所以它
+声明；这一行里挂的 skill provider 是 `dsh-superpowers-preset/skills`，所以它
 注册进的是**这个预设自己的作用域**，而不是 host 全局层。
 
 ```
 cordis.patch.yml
 └── preset-superpowers  (@deepseek-ai/dsh-agent-preset)
     ├── persona                                 ← using-superpowers 正文进系统提示词
-    ├── superpowers-preset-dsh/skills           ← 15 个技能，只注册进本预设层
+    ├── dsh-superpowers-preset/skills           ← 15 个技能，只注册进本预设层
     ├── skill-filesystem                        ← 本地技能：项目 / 用户 / bundled
     ├── tool-skill                              ← 技能目录 + skill 工具
     └── 其余全部照抄官方「标准模式」的那份清单
@@ -351,7 +351,7 @@ npm run verify
 ```sh
 # 用一个一次性 profile，不要动你自己的
 dsh --profile sptest --from-default-profile web --dump-config > $null
-dsh plugin --profile sptest add ./superpowers-preset-dsh
+dsh plugin --profile sptest add ./dsh-superpowers-preset
 dsh --profile sptest --port 3099 --no-open
 ```
 

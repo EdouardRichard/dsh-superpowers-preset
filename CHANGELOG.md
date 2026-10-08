@@ -12,6 +12,42 @@ each release below.
 
 Upstream skills unchanged (obra/superpowers **v6.4.2**).
 
+## [1.0.3] — 2026-10-08
+
+Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+**The project is now `dsh-superpowers-preset`.** The repository was renamed, and
+every reference in the package followed. Nothing else changed: the preset, its
+skills, and its runtime behaviour are identical to 1.0.2.
+
+### Changed
+
+- `package.json`'s `name`, `homepage`, `repository`, and `bugs` now say
+  `dsh-superpowers-preset`, as do the attribution lines in `LICENSE` and
+  `NOTICE.md`.
+- The bundle patch mounts the provider as **`dsh-superpowers-preset/skills`**,
+  and `scripts/verify.mjs` asserts that name: it fails the build if the declared
+  package name, the mounted specifier, or the host-row leak check drift apart.
+  `docs/architecture.md`, both READMEs, and
+  `examples/profile-override.patch.yml` follow the new name.
+- **An existing install has to be reinstalled.** The profile recorded the old
+  package name, so `dsh plugin --profile <profile> remove superpowers-preset-dsh`
+  no longer matches. Install the new one with
+  `dsh plugin --profile <profile> add github:EdouardRichard/dsh-superpowers-preset`,
+  or `add ./dsh-superpowers-preset` from a fresh checkout. GitHub redirects the
+  old repository URL, so the old install line still resolves — but the recorded
+  name would not match this release.
+
+### Fixed
+
+- **`CHANGELOG.md` labels 1.0.2 correctly.** Those notes shipped in `v1.0.2` but
+  sat under an `[Unreleased]` heading, which also left the `[1.0.2]` link
+  reference unused.
+
+[1.0.3]: https://github.com/EdouardRichard/dsh-superpowers-preset/releases/tag/v1.0.3
+
+## [1.0.2] — 2026-10-07
+
 No change to what the preset mounts or to any user-facing behaviour: this release
 strengthens the guarantees around the 1.0.1 fix and folds the difference
 documentation into the READMEs.
@@ -41,7 +77,7 @@ documentation into the READMEs.
 - `npm run verify` reports block digests and the DSH version the snapshot came
   from, so a stale mirror is visible in the output rather than inferred.
 
-[1.0.2]: https://github.com/EdouardRichard/superpowers-preset-dsh/compare/v1.0.1...v1.0.2
+[1.0.2]: https://github.com/EdouardRichard/dsh-superpowers-preset/compare/v1.0.1...v1.0.2
 
 ## [1.0.1] — 2026-10-07
 
@@ -73,7 +109,7 @@ Upstream skills unchanged (obra/superpowers **v6.4.2**).
 - The override example is regenerated from the mirrored list and now carries
   `skill-filesystem` too.
 
-[1.0.1]: https://github.com/EdouardRichard/superpowers-preset-dsh/releases/tag/v1.0.1
+[1.0.1]: https://github.com/EdouardRichard/dsh-superpowers-preset/releases/tag/v1.0.1
 
 ## [1.0.0] — 2026-10-07
 
@@ -85,7 +121,7 @@ First release. Upstream skills synced from **obra/superpowers v6.4.2**.
   `cordis.patch.yml`, carrying a self-sufficient working tool set, a persona, and
   the packaged skill provider.
 - **Scoped skill registration.** `lib/skills.js` is mounted as
-  `superpowers-preset-dsh/skills` inside the preset, so its 15 skill bundles land
+  `dsh-superpowers-preset/skills` inside the preset, so its 15 skill bundles land
   in the preset's own skill layer. Other modes never see them and pay no catalog
   tokens for them.
 - **System-prompt bootstrap.** The body of `skills/using-superpowers/SKILL.md` is
@@ -127,4 +163,4 @@ First release. Upstream skills synced from **obra/superpowers v6.4.2**.
   preset deliberately does not use them — a detached hook can miss the first
   request, while the persona cannot.
 
-[1.0.0]: https://github.com/EdouardRichard/superpowers-preset-dsh/releases/tag/v1.0.0
+[1.0.0]: https://github.com/EdouardRichard/dsh-superpowers-preset/releases/tag/v1.0.0

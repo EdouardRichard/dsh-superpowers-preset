@@ -106,7 +106,7 @@
                 User instructions (`AGENTS.md` — user level at `$DSH_HOME/AGENTS.md`, project level at `<project>/AGENTS.md` — and direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
               suffix: Your working directory is {{cwd}}.
           - id: superpowers-skills
-            name: 'superpowers-preset-dsh/skills'
+            name: 'dsh-superpowers-preset/skills'
 
           # ---- everything below mirrors the shipped `standard` preset --------------
           # Regenerate with: node scripts/sync-preset-from-dsh.mjs <dsh-root>

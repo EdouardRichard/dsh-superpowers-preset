@@ -3,6 +3,7 @@
 [简体中文](README.md) | **English**
 
 # dsh-superpowers-preset
+
 The complete [obra/superpowers](https://github.com/obra/superpowers) development
 methodology, packaged as a **DeepSeek Harness (DSH) agent preset**.
 
@@ -60,7 +61,7 @@ tradeoffs are laid out in [Compared with the plugin approach](docs/plugin-vs-pre
 Start a conversation in DSH and send:
 
 ```
-Install this plugin for me: https://github.com/EdouardRichard/superpowers-preset-dsh
+Install this plugin for me: https://github.com/EdouardRichard/dsh-superpowers-preset
 ```
 
 It will run `dsh plugin ... add` and verify the composition. **It cannot restart
@@ -73,13 +74,13 @@ profile yourself and refresh the browser.
 ### Option 2 — the command line
 
 ```sh
-dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 
 Without a global `dsh`, run the same CLI through `npx`:
 
 ```sh
-npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/superpowers-preset-dsh
+npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 
 > ⚠️ `npx` resolves npm's `latest` tag, which can **lag behind** the harness you
@@ -94,8 +95,8 @@ own). A profile that does not exist yet is initialized automatically.
 ### Option 3 — from a local checkout
 
 ```sh
-git clone https://github.com/EdouardRichard/superpowers-preset-dsh
-dsh plugin --profile web add ./superpowers-preset-dsh
+git clone https://github.com/EdouardRichard/dsh-superpowers-preset
+dsh plugin --profile web add ./dsh-superpowers-preset
 ```
 
 A relative path resolves against the directory you run the command from, and is
@@ -111,16 +112,16 @@ Bundle layers mount at profile start, so **restart the profile** (stop it and ru
 ### Confirm it installed
 
 ```sh
-dsh --profile web --dump-config | grep superpowers-preset-dsh
+dsh --profile web --dump-config | grep dsh-superpowers-preset
 ```
 
 You should see the `- id: preset-superpowers` block, including the line
-`name: superpowers-preset-dsh/skills`.
+`name: dsh-superpowers-preset/skills`.
 
 ### Uninstall
 
 ```sh
-dsh plugin --profile web remove superpowers-preset-dsh
+dsh plugin --profile web remove dsh-superpowers-preset
 ```
 
 A restart is required here too.
@@ -220,14 +221,14 @@ instructions that name tools, paths, subagents, or scripts rewritten for DSH.
 
 In one sentence: `cordis.patch.yml` inserts **one** agent-preset declaration into
 the profile's composition, and the skill provider mounted inside it is
-`superpowers-preset-dsh/skills`, so it registers into **that preset's own scope**
+`dsh-superpowers-preset/skills`, so it registers into **that preset's own scope**
 rather than the host's global layer.
 
 ```
 cordis.patch.yml
 └── preset-superpowers  (@deepseek-ai/dsh-agent-preset)
     ├── persona                                 ← using-superpowers body into the system prompt
-    ├── superpowers-preset-dsh/skills           ← 15 skills, registered into this preset's layer only
+    ├── dsh-superpowers-preset/skills           ← 15 skills, registered into this preset's layer only
     ├── skill-filesystem                        ← local skills: project / user / bundled
     ├── tool-skill                              ← the catalog and the skill loader
     └── everything else copied from the shipped Standard preset
@@ -385,7 +386,7 @@ End-to-end, in a throwaway profile:
 ```sh
 # Use a disposable profile; do not touch your own
 dsh --profile sptest --from-default-profile web --dump-config > /dev/null
-dsh plugin --profile sptest add ./superpowers-preset-dsh
+dsh plugin --profile sptest add ./dsh-superpowers-preset
 dsh --profile sptest --port 3099 --no-open
 ```
 

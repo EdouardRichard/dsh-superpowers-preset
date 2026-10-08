@@ -1,4 +1,4 @@
-# superpowers-preset-dsh — bundle patch
+# dsh-superpowers-preset — bundle patch
 #
 # This file is the whole installation: it inserts ONE agent-preset declaration
 # into the profile's Cordis composition. Nothing here touches the host layer,
@@ -13,7 +13,7 @@
 #     registers it as the scoped system-prompt persona, which means the rules
 #     are re-sent on every request and cannot be lost to history trimming or
 #     compaction — unlike a one-shot "session start" message.
-#   - `superpowers-preset-dsh/skills` registers the packaged skill catalog into
+#   - `dsh-superpowers-preset/skills` registers the packaged skill catalog into
 #     THIS preset's skill layer only. Sessions in other modes never see it.
 #
 # Everything from `# ---- everything below mirrors ...` onward is copied byte
@@ -119,7 +119,7 @@
                 User instructions (`AGENTS.md` — user level at `$DSH_HOME/AGENTS.md`, project level at `<project>/AGENTS.md` — and direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
               suffix: Your working directory is {{cwd}}.
           - id: superpowers-skills
-            name: 'superpowers-preset-dsh/skills'
+            name: 'dsh-superpowers-preset/skills'
 
           # ---- everything below mirrors the shipped `standard` preset --------------
           # Regenerate with: node scripts/sync-preset-from-dsh.mjs <dsh-root>
