@@ -38,8 +38,13 @@ export const BOOTSTRAP_SKILL = 'using-superpowers'
  */
 export const IDENTITY = 'You are a coding agent powered by the {{model}} model.'
 
-/** Deployment-parity persona suffix. */
-export const PERSONA_SUFFIX = 'Your working directory is {{cwd}}.'
+// Standard carries no persona suffix, and neither may this preset. Until DSH
+// 0.2.1 the shipped `standard` preset appended `Your working directory is
+// {{cwd}}.`; the update dropped both that suffix and the `cwd` prompt variable
+// it referenced, leaving the working-directory service to supply the directory
+// as literal user context. Keeping the suffix would fail every prompt assembly
+// in this mode ("unknown prompt variable \"{{cwd}}\""), including when an
+// existing Superpowers session is resumed.
 
 /** Template placeholder `dsh-persona` would try to resolve inside the prefix. */
 const TEMPLATE_GROUP = /\{\{[^}]*\}\}/
@@ -81,9 +86,10 @@ export function renderPrefix(body) {
  * @param prefix - rendered persona prefix.
  */
 export function assertNoTemplateGroups(prefix) {
-  // `{{model}}` and `{{cwd}}` are the two variables the shipped presets use;
-  // any other group is a bug in the bootstrap text.
-  const allowed = new Set(['{{model}}', '{{cwd}}'])
+  // `{{model}}` is the only variable the shipped `standard` preset uses. Any
+  // other group is a bug: `{{cwd}}` in particular stopped being registered in
+  // DSH 0.2.1, so it would fail prompt assembly for every session in the mode.
+  const allowed = new Set(['{{model}}'])
   const groups = prefix.match(/\{\{[^}]*\}\}/g) ?? []
   for (const group of groups) {
     if (!allowed.has(group)) {

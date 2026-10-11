@@ -12,6 +12,74 @@ each release below.
 
 Upstream skills unchanged (obra/superpowers **v6.4.2**).
 
+## [1.0.4] — 2026-10-12
+
+Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+**Adapted to DeepSeek Harness `v0.2.1-alpha.2`** (verified against source
+checkout `d7432673`), whose shipped `standard` preset this one mirrors. The
+update changed both the persona contract and the delegation API, so the
+adaptation is more than a version bump: it fixes a regression that broke every
+Superpowers session in this mode, and it repairs the parts of the port that the
+half-finished upgrade had left behind.
+
+### Fixed
+
+- **The persona suffix no longer references `{{cwd}}`.** DSH 0.2.1 replaced the
+  standard preset's `suffix: Your working directory is {{cwd}}.` with the
+  working-directory runtime context, and stopped registering `cwd` as a prompt
+  variable: only `provider` and `model` are registered. A preset that still set
+  that suffix failed every prompt assembly in the mode — new tasks and, because
+  the preset is re-resolved when a session starts, resumed history too:
+  `unknown prompt variable "{{cwd}}" in section "deployment:persona-suffix"`.
+  The directory is still in the model's context, as
+  `Current working directory: "<path>".`, supplied by
+  `@deepseek-ai/dsh-working-directory`; the persona sentence was redundant.
+- **The override example and the shipped tool reference no longer describe the
+  `0.2.1-alpha.1` delegation API.** `examples/profile-override.patch.yml` had
+  been migrated only halfway: the suffix was gone, but it still set the removed
+  `backgroundMode: continuable` on both subagent rows, still mounted the removed
+  `tool-subagent-codex`, `tool-subagent-claude-code`, and `tool-ralph` rows, and
+  still carried the pre-alpha.2 plan-mode wording. The same release removed the
+  `run_in_background` argument from `subagent` — every delegation now returns a
+  child id and reports by completion notice — and added `cwd`, which
+  `README.md`, `README.en.md`, and `using-superpowers/references/dsh-tools.md`
+  still contradicted.
+
+### Changed
+
+- **The mirrored plugin list was refreshed from `standard` as of DSH
+  `0.2.1-alpha.2`.** The same update reworded the plan-mode section, dropped the
+  obsolete `backgroundMode` config from the two subagent rows, and removed the
+  `tool-subagent-codex`, `tool-subagent-claude-code`, and `tool-ralph` rows.
+  `npm run sync:preset -- <dsh-root> --check` and `npm run verify` are green
+  again; the parity snapshot now records `0.2.1-alpha.2` (30 mirrored rows, 20
+  byte-identical blocks).
+- `scripts/verify.mjs` now fails if the preset or the override example carries a
+  persona suffix or any `{{cwd}}` reference, and
+  `scripts/sync-preset-from-dsh.mjs` fails if the shipped preset ever adds a
+  suffix back, so the port has to make that decision deliberately.
+- `scripts/lib/preset.mjs` treats `{{model}}` as the only allowed template group;
+  `PERSONA_SUFFIX` is gone. `README.md`, `README.en.md`, and
+  `docs/architecture.md` document the new suffix policy, and both READMEs'
+  compatibility tables now name `0.2.1-alpha.2` as the verified DSH version.
+- `scripts/verify.mjs` checks the override example with `collectRows()` and the
+  same block digests the parity snapshot uses, instead of scanning for the
+  ten-space indent. That scan saw only top-level rows, so the three removed rows
+  and the obsolete config key survived undetected inside the `delegation` group;
+  nested rows that the preset does not have, missing rows, and any row whose text
+  has drifted from the preset now all fail the build.
+- `npm test` ran `node --test scripts/tests/`, a directory that has never
+  existed, so it always failed. It now runs the verifier — the same gate CI runs.
+- Version references left over from the alpha.1 pass (`docs/guide.en.md`,
+  `docs/guide.zh.md`, the `session-discovery.md` generator in
+  `scripts/sync-from-upstream.mjs`, and its generated
+  `skills/diagnosing-superpowers/references/session-discovery.md`) now name
+  `0.2.1-alpha.2`. The cited source lines and `SESSION_FORMAT_VERSION` were
+  re-checked against the alpha.2 checkout and are unchanged.
+
+[1.0.4]: https://github.com/EdouardRichard/dsh-superpowers-preset/compare/v1.0.3...v1.0.4
+
 ## [1.0.3] — 2026-10-08
 
 Upstream skills unchanged (obra/superpowers **v6.4.2**).

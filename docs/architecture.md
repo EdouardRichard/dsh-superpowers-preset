@@ -62,7 +62,14 @@ Because that class of loss is invisible, it is guarded three ways:
    Standard disables it) *plus a sha256 per top-level row block*. `npm run
    verify` fails if this preset stops mounting a row **or** if a mirrored row's
    config, `isolate` map, `disabled` expression, or nested rows were edited. The
-   persona identity line and suffix are asserted the same way.
+   persona identity line is asserted the same way. Standard carries no persona
+   suffix since DSH 0.2.1 (`{{cwd}}` stopped being a registered prompt variable),
+   and this preset mirrors that: the verifier rejects any suffix or `{{cwd}}`
+   reference. The copy-pasteable override in `examples/profile-override.patch.yml`
+   is held to the same bar: every row it carries must be one the preset has, the
+   rows it deliberately replaces are named, and every other row must match the
+   preset block for block — a half-migrated example cannot pin an older
+   composition.
 3. **The failure mode is named in the diagnostic**, so the next person to hit it
    reads *why* a missing row is a missing capability rather than deleting the
    check.

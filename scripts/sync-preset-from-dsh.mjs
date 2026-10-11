@@ -32,7 +32,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
-import { IDENTITY, PERSONA_SUFFIX } from './lib/preset.mjs'
+import { IDENTITY } from './lib/preset.mjs'
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const patchPath = join(pkgRoot, 'cordis.patch.yml')
@@ -112,9 +112,10 @@ const shippedPersona = takeBlock(standard.entries, 'persona').block
 standard.rest = takeBlock(standard.entries, 'persona').rest
 
 // Our persona must be Standard's persona plus the bootstrap, so the identity
-// line and working-directory suffix have to match the shipped ones exactly. If
-// DSH rewords them, this port has to decide whether to follow before the mirror
-// silently ships an older identity.
+// line has to match the shipped one exactly, and Standard's suffix policy (none)
+// has to be ours. If DSH rewords the identity or adds a suffix back, this port
+// has to decide whether to follow before the mirror silently ships an older
+// identity or an unresolvable variable.
 const shippedPrefix = /^\s+prefix:[ \t]*(.+?)[ \t]*$/m.exec(shippedPersona)?.[1]
 const shippedSuffix = /^\s+suffix:[ \t]*(.+?)[ \t]*$/m.exec(shippedPersona)?.[1]
 if (shippedPrefix === undefined || shippedPrefix === '|' || shippedPrefix === '>-' || shippedPrefix === '|-') {
@@ -132,12 +133,12 @@ if (shippedPrefix !== IDENTITY) {
     '  Update IDENTITY in scripts/lib/preset.mjs so this preset keeps Standard\'s identity, then re-run.',
   )
 }
-if (shippedSuffix !== PERSONA_SUFFIX) {
+if (shippedSuffix !== undefined) {
   fail(
-    'the shipped standard preset changed its persona suffix.\n' +
+    'the shipped standard preset carries a persona suffix again.\n' +
     `  shipped: ${JSON.stringify(shippedSuffix)}\n` +
-    `  ours   : ${JSON.stringify(PERSONA_SUFFIX)}\n` +
-    '  Update PERSONA_SUFFIX in scripts/lib/preset.mjs, then re-run `npm run sync:bootstrap`.',
+    '  Decide whether this port follows, and confirm every {{variable}} it uses is registered by the loop\n' +
+    '  ({{cwd}} was unregistered in DSH 0.2.1 and fails prompt assembly), then update this guard.',
   )
 }
 

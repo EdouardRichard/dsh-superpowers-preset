@@ -1,7 +1,7 @@
 {
   "$comment": "Snapshot of the shipped `standard` preset, taken from a DSH source checkout. `rows` names every row it carries so a missing one can be reported by name; `blocks` records a sha256 per top-level row block, so scripts/verify.mjs also catches a mirrored row whose config, isolate map, disabled expression, or nested rows were edited by hand. A missing or altered row is a missing or altered capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>",
   "source": "packages/bundle/web-app/presets/standard.patch.yml",
-  "dshVersion": "0.2.1-alpha.1",
+  "dshVersion": "0.2.1-alpha.2",
   "rows": [
     {
       "id": "agent-instructions",
@@ -119,16 +119,6 @@
       "disabledInStandard": false
     },
     {
-      "id": "tool-subagent-codex",
-      "name": "@deepseek-ai/dsh-tool-subagent",
-      "disabledInStandard": true
-    },
-    {
-      "id": "tool-subagent-claude-code",
-      "name": "@deepseek-ai/dsh-tool-subagent",
-      "disabledInStandard": true
-    },
-    {
       "id": "workflow-ptc",
       "name": "@deepseek-ai/dsh-workflow-ptc",
       "disabledInStandard": false
@@ -137,11 +127,6 @@
       "id": "tool-workflow",
       "name": "@deepseek-ai/dsh-tool-workflow",
       "disabledInStandard": false
-    },
-    {
-      "id": "tool-ralph",
-      "name": "@deepseek-ai/dsh-tool-ralph",
-      "disabledInStandard": true
     },
     {
       "id": "tool-ask-user",
@@ -220,7 +205,7 @@
     },
     {
       "id": "planning",
-      "sha256": "68c267caa484ce815fafdce1d6ef7b88a44d3c886ec030d46b5ca9459ef763cd"
+      "sha256": "86d7c9e2f13e0a5be16bda371fcb2748beffa666e56506af02d7a729eccc901e"
     },
     {
       "id": "compaction",
@@ -228,7 +213,7 @@
     },
     {
       "id": "delegation",
-      "sha256": "200e088f673ffb5ea9dd45dd39357dcf071b3c1d529e8a2d0ad7ffcf4510690e"
+      "sha256": "33d3a374d5c39a9230d670fa21a1d84281e45ca64b8652e63e596c6e3a3379f4"
     },
     {
       "id": "tool-ask-user",

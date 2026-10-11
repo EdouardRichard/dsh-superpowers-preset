@@ -28,7 +28,6 @@ import { fileURLToPath } from 'node:url'
 import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
 import {
   IDENTITY,
-  PERSONA_SUFFIX,
   PRESET_ID,
   PRESET_ROW_ID,
   assertNoTemplateGroups,
@@ -211,8 +210,23 @@ if (shippedPrefix !== expectedPrefix) {
 } else {
   ok(`bootstrap: ${expectedPrefix.length} chars = identity (${IDENTITY.length}) + using-superpowers body (${bootstrapBody.length})`)
 }
-if (!patchText.includes(`suffix: ${PERSONA_SUFFIX}`)) {
-  fail(`the persona row must set suffix: ${PERSONA_SUFFIX}`)
+// Until DSH 0.2.1 the shipped `standard` preset ended with `suffix: Your working
+// directory is {{cwd}}.`. That release dropped the suffix and the `cwd` prompt
+// variable it referenced: only `provider` and `model` are registered, so any
+// suffix naming `{{cwd}}` fails prompt assembly for new *and* resumed sessions in
+// the mode. Standard carries no suffix; neither may this preset.
+if (/^\s+suffix:/m.test(patchText)) {
+  fail(
+    'the persona row must not set a suffix. The shipped standard preset has none, and a suffix\n' +
+    '    referencing {{cwd}} cannot resolve — the loop registers only {{provider}} and {{model}}.',
+  )
+}
+if (patchText.includes('{{cwd}}')) {
+  fail(
+    'cordis.patch.yml still references {{cwd}}, which DSH 0.2.1 no longer registers as a prompt\n' +
+    '    variable; prompt assembly would fail before any model request. Use the working-directory\n' +
+    '    runtime context instead of a persona suffix.',
+  )
 }
 if (bootstrapBody.length < 1500) {
   fail(`the bootstrap body is only ${bootstrapBody.length} chars — the skill file looks truncated`)
@@ -220,7 +234,8 @@ if (bootstrapBody.length < 1500) {
 
 // The shipped override example is a *wholesale* replacement of the preset
 // config, so it drifts silently whenever the preset changes. Keep it honest:
-// it must carry the same bootstrap and only plugin rows the preset actually has.
+// it must carry the same bootstrap, no row the preset does not have, and every
+// row it does carry has to say exactly what the preset says.
 const examplePath = join(pkgRoot, 'examples', 'profile-override.patch.yml')
 const exampleText = await readFile(examplePath, 'utf8')
 if (!exampleText.includes(`- id: ${PRESET_ROW_ID}`)) {
@@ -229,12 +244,49 @@ if (!exampleText.includes(`- id: ${PRESET_ROW_ID}`)) {
 if (readPrefixFromPatch(exampleText) !== expectedPrefix) {
   fail('examples/profile-override.patch.yml carries a stale persona prefix; regenerate it from cordis.patch.yml')
 }
-const exampleRowIds = [...exampleText.matchAll(/^ {10}- id: ([\w-]+)$/gm)].map(match => match[1])
-const shippedRowIds = [...patchText.matchAll(/^ {10}- id: ([\w-]+)$/gm)].map(match => match[1])
-for (const id of exampleRowIds) {
-  if (!shippedRowIds.includes(id)) fail(`examples/profile-override.patch.yml mounts row "${id}", which the shipped preset does not have`)
+if (/^\s+suffix:/m.test(exampleText) || exampleText.includes('{{cwd}}')) {
+  fail(
+    'examples/profile-override.patch.yml still shows a persona suffix. Standard carries none since\n' +
+    '    DSH 0.2.1, and {{cwd}} no longer resolves; drop the suffix from the copy-pasteable config.',
+  )
 }
-ok(`override example: ${exampleRowIds.length}/${shippedRowIds.length} shipped rows, bootstrap in step`)
+// `collectRows` flattens whole subtrees, so a stale row *inside* a group counts
+// too. Scanning for the ten-space indent (as this check used to) saw only
+// top-level rows and therefore missed exactly the rows an upgrade drops: the
+// alpha.1 `tool-subagent-codex`, `tool-subagent-claude-code`, and `tool-ralph`
+// rows all lived inside the `delegation` group, indented past the pattern.
+const exampleRowIds = collectRows(exampleText).map(row => row.id)
+const shippedRowIds = new Set(collectRows(patchText).map(row => row.id))
+for (const id of exampleRowIds) {
+  if (!shippedRowIds.has(id)) fail(`examples/profile-override.patch.yml mounts row "${id}", which the shipped preset does not have`)
+}
+// The example deliberately drops `present`, whose row this override replaces;
+// every other shipped top-level row has to be there.
+const DROPPED_FROM_EXAMPLE = new Set(['present'])
+const exampleBlocks = new Map(topLevelBlocks(exampleText).map(block => [block.id, blockDigest(block.text)]))
+for (const block of topLevelBlocks(patchText)) {
+  if (!DROPPED_FROM_EXAMPLE.has(block.id) && !exampleBlocks.has(block.id)) {
+    fail(`examples/profile-override.patch.yml is missing the shipped row "${block.id}"`)
+  }
+}
+// Presence is not enough. The example promises to keep every other row "byte
+// for byte", so comparing block digests is what catches an obsolete config key
+// (`backgroundMode`) or a reworded section the mirror updated and the example
+// did not — both of which the alpha.1 example shipped.
+const alteredExampleBlocks = topLevelBlocks(patchText)
+  .filter(block => exampleBlocks.has(block.id) && exampleBlocks.get(block.id) !== blockDigest(block.text))
+  .map(block => block.id)
+if (alteredExampleBlocks.length > 0) {
+  fail(
+    `examples/profile-override.patch.yml carries ${alteredExampleBlocks.length} row block(s) that no longer match ` +
+    `the shipped preset: ${alteredExampleBlocks.join(', ')}.\n` +
+    '    Re-copy the plugin list out of cordis.patch.yml after every mirror, or the override pins an old composition.',
+  )
+}
+ok(
+  `override example: ${exampleRowIds.length} rows all shipped, ${exampleBlocks.size} blocks byte-identical, ` +
+  `bootstrap in step (drops: ${[...DROPPED_FROM_EXAMPLE].join(', ')})`,
+)
 
 // ------------------------------------------------------------------ skills --
 

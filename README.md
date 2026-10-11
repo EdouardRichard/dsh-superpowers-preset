@@ -10,7 +10,7 @@
 按需选择、按任务生效：流程约定进系统提示词，技能目录只在这个模式里可见。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.1-informational)](#兼容性)
+[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.2-informational)](#兼容性)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -79,9 +79,9 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 ```
 
 > ⚠️ `npx` 默认取 npm 的 `latest` 标签，它可能**落后于**你正在运行的
-> harness（例如 npm 上 `latest = 0.2.0-rc.2`，而你在跑 `0.2.1-alpha.1`）。
+> harness（例如 npm 上 `latest = 0.2.0-rc.2`，而你在跑 `0.2.1-alpha.2`）。
 > 版本对不上时显式指定，例如
-> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.1 plugin ...`。
+> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.2 plugin ...`。
 > 用 pnpm 的话，`pnpm dlx @deepseek-ai/dsh@<版本> plugin ...` 等价。
 
 `--profile` 换成你实际用的 profile（`web` / `headless` / 自定义）。profile 不存在时
@@ -232,8 +232,10 @@ cordis.patch.yml
 2. **提交了快照，卡在构建上。** `preset/standard-parity.json` 记录官方预设携带的
    每一行，并对每个顶层行块做 sha256；`npm run verify` 一旦发现少一行、或者某个
    镜像行的 config / isolate / disabled / 嵌套子行被改过，就失败。
-3. **persona 身份行也被断言**：官方预设改了身份行或 working-directory 后缀，
-   `sync:preset` 会报错，而不是悄悄用旧身份继续发布。
+3. **persona 身份行也被断言**：官方预设改了身份行，`sync:preset` 会报错，而不是
+   悄悄用旧身份继续发布。DSH 0.2.1 起官方预设不再带 persona 后缀，本预设同样不带：
+   `{{cwd}}` 已不是注册过的提示词变量（只有 `provider`、`model`），带上它会让整个
+   模式的提示词组装失败——包括恢复已有会话时。
 
 升级 DSH 后重跑 `npm run sync:preset -- <path> --check`（只报告不改动），再
 `npm run verify`。
@@ -281,7 +283,6 @@ provider 用子路径导出而不是包根）见 [docs/architecture.md](docs/arc
         config:
           prefix: |-
             ...同样原样保留，或者换成你自己的…
-          suffix: Your working directory is {{cwd}}.
       # ...
 ```
 
@@ -312,7 +313,7 @@ npm run verify
 
 | 项目 | 状态 |
 | --- | --- |
-| 验证过的 DSH 版本 | `0.2.1-alpha.1`（安装版）与源码 checkout `5badb15` |
+| 验证过的 DSH 版本 | `0.2.1-alpha.2`（源码 checkout `d7432673`） |
 | 依赖的 DSH 接口 | `ctx.skills.registerProvider`（技能提供者注册）、`dsh.bundle.patch`（bundle 挂载）、`@deepseek-ai/dsh-agent-preset` 声明格式、`@deepseek-ai/dsh-persona` |
 | 运行时依赖 | **无**。只使用 Node 内置模块 |
 | peerDependencies | **不声明**。DSH 的插件兼容闸门只检查插件自己声明的 peer 依赖，因此这道闸门不会拦截本包——代价是 DSH 也不会替你校验版本，所以升级 DSH 后请重跑 `npm run verify` |
@@ -323,10 +324,13 @@ npm run verify
 
 - **卡片上没有「模式说明 / 如何使用」按钮**，原因见上文；等价内容在
   [docs/guide.zh.md](docs/guide.zh.md)。
-- **子 Agent 无法指定模型**：DSH 的 `subagent` 工具只接受
-  `description` / `prompt` / `run_in_background`。`subagent-driven-development`
-  里"显式指定模型"的要求，在 DSH 上只能写进 prompt；确实需要按单元指定模型时
-  改用 `workflow`（它的 `agent()` 接受 `provider` / `model`）。
+- **子 Agent 的模型由部署设置决定**：DSH 的 `subagent` 接受 `description` /
+  `prompt` / `cwd`，没有 `run_in_background`——每次委派都已异步。预设的
+  `tool-subagent` 行开启了 `modelSelectionSettings`，因此部署暴露可选子模型时
+  `subagent` 也接受 `provider` / `model` / `reasoning_effort`，否则沿用会话设置。
+  `subagent-driven-development` 里"显式指定模型"的要求，在没有按次选择时写进
+  prompt；确实需要按单元指定模型时，改用 `workflow`（它的 `agent()` 接受
+  `provider` / `model`）。
 - **没有命名 Agent**：上游的 `Task(superpowers:code-reviewer)` 在 DSH 里不存在，
   改为把技能自带的提示词模板（`code-reviewer.md` 等）交给 `subagent`。
 - **bash 辅助脚本**：技能里 7 个 `.sh` 脚本需要 Git Bash。Windows 上 `PATH` 里的

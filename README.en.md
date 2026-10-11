@@ -11,7 +11,7 @@ Chosen per task, scoped per task: the workflow rules go into the system prompt,
 and the skill catalog is visible only in this mode.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.1-informational)](#compatibility)
+[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.2-informational)](#compatibility)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -85,8 +85,8 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 
 > ⚠️ `npx` resolves npm's `latest` tag, which can **lag behind** the harness you
 > are running (npm currently has `latest = 0.2.0-rc.2` while this was verified on
-> `0.2.1-alpha.1`). Pin the version when they differ:
-> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.1 plugin ...`.
+> `0.2.1-alpha.2`). Pin the version when they differ:
+> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.2 plugin ...`.
 > With pnpm, `pnpm dlx @deepseek-ai/dsh@<version> plugin ...` is equivalent.
 
 Replace `--profile` with the profile you actually run (`web`, `headless`, or your
@@ -254,9 +254,12 @@ So this preset guards that class of loss three ways:
    records every row Standard carries plus a sha256 per top-level row block, and
    `npm run verify` fails if a row goes missing *or* if any mirrored row's
    config, `isolate` map, `disabled` expression, or nested rows were edited.
-3. **The persona identity is asserted too**: if DSH rewords the identity line or
-   the working-directory suffix, `sync:preset` fails rather than quietly shipping
-   an older identity.
+3. **The persona identity is asserted too**: if DSH rewords the identity line,
+   `sync:preset` fails rather than quietly shipping an older identity. Since DSH
+   0.2.1 the shipped preset carries no persona suffix, and neither does this one:
+   `{{cwd}}` is no longer a registered prompt variable (only `provider` and
+   `model` are), so a suffix referencing it fails every prompt assembly in the
+   mode — including when an existing session is resumed.
 
 After a DSH upgrade, run `npm run sync:preset -- <path> --check` (reports drift,
 changes nothing), then `npm run verify`.
@@ -308,7 +311,6 @@ mode, move it up the roster, or drop tools you do not want.
         config:
           prefix: |-
             ...keep it as-is, or write your own...
-          suffix: Your working directory is {{cwd}}.
       # ...
 ```
 
@@ -341,7 +343,7 @@ adaptation list is in [NOTICE.md](NOTICE.md).
 
 | | Status |
 | --- | --- |
-| DSH versions verified | `0.2.1-alpha.1` (installed) and source checkout `5badb15` |
+| DSH versions verified | `0.2.1-alpha.2` (source checkout `d7432673`) |
 | DSH interfaces used | `ctx.skills.registerProvider`, `dsh.bundle.patch`, the `@deepseek-ai/dsh-agent-preset` declaration format, `@deepseek-ai/dsh-persona` |
 | Runtime dependencies | **None.** Node built-ins only |
 | peerDependencies | **None declared.** DSH's plugin compatibility gate only inspects the peer dependencies a plugin declares, so it will not block this bundle — at the cost of DSH not validating it for you. Re-run `npm run verify` after a DSH upgrade |
@@ -352,11 +354,16 @@ adaptation list is in [NOTICE.md](NOTICE.md).
 
 - **No Mode details / How to use buttons on the card** — see above; the
   equivalent content is in [docs/guide.en.md](docs/guide.en.md).
-- **Subagents cannot pin a model.** DSH's `subagent` tool accepts only
-  `description`, `prompt`, and `run_in_background`. Where
-  `subagent-driven-development` says "always specify the model explicitly", the
-  DSH translation is to state it in the prompt; when per-unit model control
-  matters, use `workflow`, whose `agent()` accepts `provider` and `model`.
+- **A subagent's model is decided by the deployment's settings.** DSH's
+  `subagent` takes `description`, `prompt`, and `cwd` — there is no
+  `run_in_background`, because every delegation is already asynchronous. The
+  preset's `tool-subagent` row enables `modelSelectionSettings`, so where the
+  deployment exposes child model selection the tool also accepts `provider`,
+  `model`, and `reasoning_effort`; otherwise the child inherits the session
+  settings. Where `subagent-driven-development` says "always specify the model
+  explicitly" and no per-call selection is available, state it in the prompt;
+  when per-unit model control matters, use `workflow`, whose `agent()` accepts
+  `provider` and `model`.
 - **No named agents.** Upstream's `Task(superpowers:code-reviewer)` has no DSH
   equivalent; dispatch the skill's own prompt template (`code-reviewer.md`, …)
   through `subagent` instead.

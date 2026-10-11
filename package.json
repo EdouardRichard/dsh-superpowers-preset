@@ -1,6 +1,6 @@
 {
   "name": "dsh-superpowers-preset",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Superpowers as a DeepSeek Harness agent preset: the full obra/superpowers engineering methodology in one selectable mode, with its skills and workflow rules scoped to that mode.",
   "type": "module",
   "license": "MIT",
@@ -38,7 +38,7 @@
     "sync": "node scripts/sync-from-upstream.mjs",
     "sync:bootstrap": "node scripts/sync-bootstrap.mjs",
     "sync:preset": "node scripts/sync-preset-from-dsh.mjs",
-    "test": "node --test scripts/tests/"
+    "test": "node scripts/verify.mjs"
   },
   "keywords": [
     "dsh",

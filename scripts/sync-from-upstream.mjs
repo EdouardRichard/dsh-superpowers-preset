@@ -373,7 +373,7 @@ const TRANSFORMS = [
       '',
       '## DeepSeek Harness',
       '',
-      'Verified against DSH 0.2.1-alpha.1; confirm it against the records you actually read.',
+      'Verified against DSH 0.2.1-alpha.2; confirm it against the records you actually read.',
       '',
       '- Transcripts: `' + DSH_HOME + '/sessions/<slugified-cwd>/session-<uuid>/session*.jsonl.zstd`',
       '  (`' + DSH_HOME + '` defaults to `~/.dsh`). The slug is the working directory with',
