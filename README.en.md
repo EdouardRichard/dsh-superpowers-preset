@@ -10,8 +10,12 @@ methodology, packaged as a **DeepSeek Harness (DSH) agent preset**.
 Chosen per task, scoped per task: the workflow rules go into the system prompt,
 and the skill catalog is visible only in this mode.
 
+**This release is adapted to DSH `0.2.1-rc.2`** (source checkout `687f282e86`)
+and mirrors that release's Standard preset; install and compatibility notes
+follow below.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.2-informational)](#compatibility)
+[![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-informational)](#compatibility)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -84,9 +88,9 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 ```
 
 > ⚠️ `npx` resolves npm's `latest` tag, which can **lag behind** the harness you
-> are running (npm currently has `latest = 0.2.0-rc.2` while this was verified on
-> `0.2.1-alpha.2`). Pin the version when they differ:
-> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.2 plugin ...`.
+> are running (this project was verified on `0.2.1-rc.2`, while npm's `latest`
+> often stays on an earlier release). Pin the version when they differ:
+> `npx --yes @deepseek-ai/dsh@0.2.1-rc.2 plugin ...`.
 > With pnpm, `pnpm dlx @deepseek-ai/dsh@<version> plugin ...` is equivalent.
 
 Replace `--profile` with the profile you actually run (`web`, `headless`, or your
@@ -103,6 +107,18 @@ A relative path resolves against the directory you run the command from, and is
 recorded as an absolute link to that directory. A local directory installs as a
 **link**, not a copy, so your edits take effect on the next profile restart —
 convenient while customising.
+
+### Upgrading from the old package alias
+
+Since 1.0.3 the package is `dsh-superpowers-preset`. If your profile still
+depends on the old alias `superpowers-preset-dsh` (the pre-1.0.3 install), remove
+that first and then install the current name: two aliases selected as bundles
+would each insert a `preset-superpowers` layer, and the duplicate preset
+declaration collides.
+
+```sh
+dsh plugin --profile web remove superpowers-preset-dsh
+```
 
 ### A restart is required
 
@@ -239,7 +255,7 @@ cordis.patch.yml
 DSH disables several working rows at the host layer and lets each agent preset
 mount its own copy. The one that bites is `skill-filesystem`: the shipped patch
 says plainly that "presets own local discovery"
-(`packages/bundle/web-app/cordis.patch.yml:493-503`). A preset that forgets to
+(`packages/bundle/web-app/cordis.patch.yml:505-512`). A preset that forgets to
 mount it has **no local skill discovery at all** — `.dsh/skills`,
 `.agents/skills`, and `$DSH_HOME/skills` all disappear from the catalog, with no
 error to tell you why.
@@ -283,7 +299,9 @@ Two more, in behaviour rather than composition:
   wins). A skill you write with the same name shadows the packaged one, and DSH
   logs a warning.
 - **The prompt is bigger, in this mode only.** Measured during development:
-  system prompt 6130 → 9878 chars, skill catalog 2559 → 8356 chars.
+  enabling this mode adds roughly 3.7k characters to the system prompt and
+  roughly 5.8k to the skill catalog (the exact counts drift a little with each
+  DSH release's tool wording).
 
 The full explanation — why the bootstrap is a persona rather than a session-start
 injection, and why the provider is a subpath export rather than the package root —
@@ -343,11 +361,12 @@ adaptation list is in [NOTICE.md](NOTICE.md).
 
 | | Status |
 | --- | --- |
-| DSH versions verified | `0.2.1-alpha.2` (source checkout `d7432673`) |
+| DSH versions verified | `0.2.1-rc.2` (source checkout `687f282e86`) |
 | DSH interfaces used | `ctx.skills.registerProvider`, `dsh.bundle.patch`, the `@deepseek-ai/dsh-agent-preset` declaration format, `@deepseek-ai/dsh-persona` |
 | Runtime dependencies | **None.** Node built-ins only |
-| peerDependencies | **None declared.** DSH's plugin compatibility gate only inspects the peer dependencies a plugin declares, so it will not block this bundle — at the cost of DSH not validating it for you. Re-run `npm run verify` after a DSH upgrade |
-| Node.js | >= 20 (verified on 24.x) |
+| `engines.dsh` | **None declared.** A range would impose a hard version requirement; this bundle does not pin one and leaves compatibility to `npm run verify` |
+| peerDependencies | **None declared.** DSH's plugin compatibility gate reads an own `engines.dsh` range first and only otherwise inspects `@deepseek-ai/dsh*` peer dependencies. Declaring neither means the gate never blocks this bundle — at the cost of DSH not validating it for you. Re-run `npm run verify` after a DSH upgrade |
+| Node.js | >= 20 for this package's own code (verified on 24.x); DSH `0.2.1-rc.2` itself requires `^22.19.0` or `>=24` |
 | Platforms | Windows, macOS, Linux. On Windows `tool-pwsh` is mounted; on POSIX, `tool-bash` |
 
 ### Known limitations
@@ -385,6 +404,8 @@ npm run verify
 It checks that the bundle manifest resolves, the preset declaration is
 well-formed, the provider is mounted inside the preset rather than at the host
 layer, every row the shipped Standard preset carries is still mounted here, the
+delegation rows carry none of the subagent config keys DSH 0.2.1 removed
+(`persona` / `toolFilter` — either one makes the whole mode fail to mount), the
 persona text matches the skill file byte for byte, all 15 skills list and load
 through the real provider, and no relative link dangles.
 

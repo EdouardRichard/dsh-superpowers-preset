@@ -45,7 +45,7 @@ easiest to miss and worst to miss.
 DSH keeps the `skills` **registry** on the host plane but moves **discovery**
 behind presets: the base `skill-filesystem` row is disabled at the host layer,
 with the shipped patch explaining that "presets own local discovery"
-(`packages/bundle/web-app/cordis.patch.yml:493-503`). So a preset that does not
+(`packages/bundle/web-app/cordis.patch.yml:505-512`). So a preset that does not
 mount its own copy has no filesystem provider at all — its agent sees the
 packaged catalog and silently loses every skill the user has written, in the
 project or in `$DSH_HOME/skills`.
@@ -129,10 +129,12 @@ row; that row needs an `apply`, and the `apply` must not touch the host.
 
 - **No runtime dependencies.** `lib/` imports only Node built-ins. The provider
   cannot drift with the profile's dependency tree, and no build step is needed.
-- **No `@deepseek-ai/dsh*` peer dependencies.** DSH's plugin compatibility gate
-  checks only the peer dependencies a plugin declares; declaring none keeps the
-  bundle loadable across DSH releases, at the cost of DSH not validating it for
-  you. `scripts/verify.mjs` is the substitute.
+- **No `engines.dsh` and no `@deepseek-ai/dsh*` peer dependencies.** DSH's plugin
+  compatibility gate reads an own `engines.dsh` range first and only otherwise
+  checks `@deepseek-ai/dsh*` peer dependencies
+  (`packages/boot/app-boot/src/plugin-compatibility.ts`). Declaring neither keeps
+  the bundle loadable on every DSH release, at the cost of DSH not validating it
+  for you. `scripts/verify.mjs` is the substitute.
 - **Every harness plugin it names is one DSH ships.** The patch references
   `@deepseek-ai/dsh-*` packages and `cordis:group`; `verify.mjs` rejects any
   other specifier.
@@ -160,16 +162,35 @@ npm run verify
 `everything below mirrors` marker either.
 
 ```bash
-# After upgrading DSH, against the new source checkout or installation:
-npm run sync:preset -- /path/to/deepseek-harness
+# After upgrading DSH, against the new source checkout (the script reads
+# packages/bundle/web-app/presets/standard.patch.yml):
+npm run sync:preset -- /path/to/deepseek-harness --accept-dsh-version
 
-# Review the diff, then confirm nothing drifted:
+# Review the diff and the new version references, then confirm nothing drifted:
 npm run sync:preset -- /path/to/deepseek-harness --check
 npm run verify
 ```
 
+`--accept-dsh-version` is required only when the checkout reports a different
+DSH version than the committed snapshot: mirroring another release is an upgrade
+decision. The script also refuses a checkout whose standard preset still carries
+the `persona`/`toolFilter` delegation config that DSH 0.2.1 removed (first
+shipped in `0.2.1-alpha.3`), so an older checkout cannot silently revert the
+mirror.
+
 The mirror keeps the persona and the Superpowers provider verbatim and replaces
 everything else with the shipped Standard list.
+
+The verifier also rejects those removed keys on any row mounting
+`@deepseek-ai/dsh-tool-subagent`: that plugin throws at mount when either key is
+present, which marks the whole preset broken and blocks every session in the
+mode. Standard dropped both — the child schedule-tool restriction moved into the
+tool layer — and this mirror follows.
+
+`package.json` pins the release the mirror was taken from in `dsh.verifiedDsh`,
+and the verifier fails when it disagrees with the parity snapshot, so a stale or
+hand-edited snapshot cannot claim a different release than the docs and the
+mirror name.
 
 `scripts/sync-from-upstream.mjs` copies the upstream tree into a staging
 directory, applies the asserted rewrites, strips the `superpowers:` namespace
@@ -188,9 +209,12 @@ adaptation. The adaptations themselves are documented in
    list, and only resolvable plugin specifiers;
 3. the skill provider is mounted inside the preset and **not** as a host row;
 4. every row the shipped `standard` preset carries is still mounted here;
-5. the persona prefix equals the identity line plus the current
+5. the delegation rows carry none of the subagent config keys DSH 0.2.1 removed
+   (first shipped in `0.2.1-alpha.3`: `persona`, `toolFilter`), whose presence
+   would make the mount fail;
+6. the persona prefix equals the identity line plus the current
    `using-superpowers` body, with no `{{…}}` group `dsh-persona` would reject;
-6. every skill bundle lists, loads, and resolves its resource base through the
+7. every skill bundle lists, loads, and resolves its resource base through the
    real provider, with duplicate names and dangling relative links reported.
 
 End-to-end verification (install into a throwaway profile, start a task in each

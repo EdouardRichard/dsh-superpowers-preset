@@ -34,7 +34,7 @@ export const BOOTSTRAP_SKILL = 'using-superpowers'
 /**
  * Deployment-parity persona prefix. `dsh-persona` shadows the deployment-wide
  * persona, so a preset must restate the identity it wants rather than inherit
- * one; these two lines match the shipped `standard` preset exactly.
+ * one; this line matches the shipped `standard` preset exactly.
  */
 export const IDENTITY = 'You are a coding agent powered by the {{model}} model.'
 

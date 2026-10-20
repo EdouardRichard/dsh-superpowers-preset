@@ -107,7 +107,7 @@
 ## 三、为什么卡片上没有那两个按钮
 
 这不是配置问题，是 DSH 当前的设计：内置预设的帮助按钮只对**内置**预设
-开放。证据（DSH `0.2.1-alpha.2` 源码）：
+开放。证据（DSH `0.2.1-rc.2` 源码）：
 
 - `packages/client/ui-agent-preset/src/client/AgentPresetSection.tsx:115`
   调用 `presetGuide(row.id, builtIn ? 'system' : 'user')`，`:142-147` 只在

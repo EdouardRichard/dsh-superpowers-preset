@@ -9,8 +9,11 @@
 
 按需选择、按任务生效：流程约定进系统提示词，技能目录只在这个模式里可见。
 
+**当前版本适配 DSH `0.2.1-rc.2`**（源码 checkout `687f282e86`），镜像的是该版本的
+标准模式预设，安装与兼容性说明见下方。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--alpha.2-informational)](#兼容性)
+[![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-informational)](#兼容性)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -79,9 +82,9 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 ```
 
 > ⚠️ `npx` 默认取 npm 的 `latest` 标签，它可能**落后于**你正在运行的
-> harness（例如 npm 上 `latest = 0.2.0-rc.2`，而你在跑 `0.2.1-alpha.2`）。
-> 版本对不上时显式指定，例如
-> `npx --yes @deepseek-ai/dsh@0.2.1-alpha.2 plugin ...`。
+> harness（本项目验证于 DSH `0.2.1-rc.2`，而 npm 的 `latest` 往往停在更早的
+> 版本）。版本对不上时显式指定，例如
+> `npx --yes @deepseek-ai/dsh@0.2.1-rc.2 plugin ...`。
 > 用 pnpm 的话，`pnpm dlx @deepseek-ai/dsh@<版本> plugin ...` 等价。
 
 `--profile` 换成你实际用的 profile（`web` / `headless` / 自定义）。profile 不存在时
@@ -96,6 +99,16 @@ dsh plugin --profile web add ./dsh-superpowers-preset
 
 相对路径按**你执行命令时所在的目录**解析，安装后记为该目录的绝对 link。本地目录是
 **link 安装**（不是复制），改完这个目录重启 profile 就生效，方便自己改。
+
+### 从旧包名升级
+
+1.0.3 起包名是 `dsh-superpowers-preset`。如果 profile 的依赖里还是旧别名
+`superpowers-preset-dsh`（1.0.2 及更早的安装），先卸载旧名再安装新名：两个包名
+同时被选为 bundle 会各插入一层 `preset-superpowers`，同名预设声明冲突。
+
+```sh
+dsh plugin --profile web remove superpowers-preset-dsh
+```
 
 ### 装完要重启
 
@@ -220,7 +233,7 @@ cordis.patch.yml
 
 **这一点是有保证的，不是大概齐。** DSH 会把一些实际可用的行在 host 层禁用，
 改由每个预设自己挂载——最典型的是 `skill-filesystem`：官方补丁里写得很清楚，
-"presets own local discovery"（`packages/bundle/web-app/cordis.patch.yml:493-503`）。
+"presets own local discovery"（`packages/bundle/web-app/cordis.patch.yml:505-512`）。
 预设如果忘了挂它，就**没有本地技能发现**：项目里的 `.dsh/skills`、`.agents/skills`
 和用户目录的 `$DSH_HOME/skills` 全部看不见，而且不会报错。
 
@@ -255,8 +268,9 @@ cordis.patch.yml
 - **同名技能时本地技能优先。** 本包和 `skill-filesystem` 注册进同一层，层内按
   rank 决定胜负（本地根 100–500，本包 550，bundled 600，数值小的赢），所以你
   自己写的同名技能会盖掉打包的那份，DSH 会记一条 warning。
-- **提示词更大，但只在本模式。** 开发机上实测：system prompt 6130 → 9878 字符，
-  技能目录 2559 → 8356 字符。
+- **提示词更大，但只在本模式。** 开发期间实测：开启本模式会让系统提示词多出
+  约 3.7k 字符、技能目录多出约 5.8k 字符（精确数值随 DSH 版本与工具说明措辞
+  小幅变化）。
 
 完整说明（包括为什么 bootstrap 用 persona 而不是会话开始时的注入、为什么
 provider 用子路径导出而不是包根）见 [docs/architecture.md](docs/architecture.md)。
@@ -313,11 +327,12 @@ npm run verify
 
 | 项目 | 状态 |
 | --- | --- |
-| 验证过的 DSH 版本 | `0.2.1-alpha.2`（源码 checkout `d7432673`） |
+| 验证过的 DSH 版本 | `0.2.1-rc.2`（源码 checkout `687f282e86`） |
 | 依赖的 DSH 接口 | `ctx.skills.registerProvider`（技能提供者注册）、`dsh.bundle.patch`（bundle 挂载）、`@deepseek-ai/dsh-agent-preset` 声明格式、`@deepseek-ai/dsh-persona` |
 | 运行时依赖 | **无**。只使用 Node 内置模块 |
-| peerDependencies | **不声明**。DSH 的插件兼容闸门只检查插件自己声明的 peer 依赖，因此这道闸门不会拦截本包——代价是 DSH 也不会替你校验版本，所以升级 DSH 后请重跑 `npm run verify` |
-| Node.js | >= 20（本机在 24.x 上验证） |
+| `engines.dsh` | **不声明**。声明它会对 DSH 版本提出硬性要求；本包不锁定 DSH 版本，改由 `npm run verify` 承担兼容性检查 |
+| peerDependencies | **不声明**。DSH 的插件兼容闸门先读包自己的 `engines.dsh`，没有时才检查 `@deepseek-ai/dsh*` peer 依赖；两者都不声明意味着闸门不会拦截本包，代价是 DSH 也不会替你校验版本，所以升级 DSH 后请重跑 `npm run verify` |
+| Node.js | 本包代码 >= 20（本机在 24.x 上验证）；DSH `0.2.1-rc.2` 自身要求 `^22.19.0` 或 `>=24` |
 | 平台 | Windows / macOS / Linux。Windows 上 `tool-pwsh` 生效，POSIX 上 `tool-bash` 生效 |
 
 ### 已知限制
@@ -347,8 +362,10 @@ npm run verify
 ```
 
 它检查 bundle 清单能解析、预设声明合法、provider 只挂在预设作用域、官方
-标准预设携带的每一行都还在、persona 正文与技能文件一致、15 个技能都能通过
-真实 provider 列出并读回，以及没有悬空相对链接。
+标准预设携带的每一行都还在、预设不再携带 DSH 0.2.1 从
+`dsh-tool-subagent` 移除的配置键（`persona` / `toolFilter`，带上它们会让整个
+模式挂载失败）、persona 正文与技能文件一致、15 个技能都能通过真实 provider
+列出并读回，以及没有悬空相对链接。
 
 装进真实 profile 的端到端验证：
 

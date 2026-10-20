@@ -1,7 +1,7 @@
 {
   "$comment": "Snapshot of the shipped `standard` preset, taken from a DSH source checkout. `rows` names every row it carries so a missing one can be reported by name; `blocks` records a sha256 per top-level row block, so scripts/verify.mjs also catches a mirrored row whose config, isolate map, disabled expression, or nested rows were edited by hand. A missing or altered row is a missing or altered capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>",
   "source": "packages/bundle/web-app/presets/standard.patch.yml",
-  "dshVersion": "0.2.1-alpha.2",
+  "dshVersion": "0.2.1-rc.2",
   "rows": [
     {
       "id": "agent-instructions",
@@ -152,6 +152,11 @@
       "id": "tool-plugin-manager",
       "name": "@deepseek-ai/dsh-plugin-manager/tools",
       "disabledInStandard": true
+    },
+    {
+      "id": "tool-plugin-market",
+      "name": "@deepseek-ai/dsh-plugin-market/tools",
+      "disabledInStandard": true
     }
   ],
   "blocks": [
@@ -213,7 +218,7 @@
     },
     {
       "id": "delegation",
-      "sha256": "33d3a374d5c39a9230d670fa21a1d84281e45ca64b8652e63e596c6e3a3379f4"
+      "sha256": "7908414b95c73bea9ca01b19ee4fdfbb9d8c03320b30d94fe429eada68ff5b7f"
     },
     {
       "id": "tool-ask-user",
@@ -234,6 +239,10 @@
     {
       "id": "tool-plugin-manager",
       "sha256": "d66d1ee2d19c22b86a8a2e4a1152c4d3d9187c0664f9070f150c3e8176630087"
+    },
+    {
+      "id": "tool-plugin-market",
+      "sha256": "2102f1ca9328449594ab85b0101e939cee922adc90e7bb746999b090a3cc1ae9"
     }
   ]
 }

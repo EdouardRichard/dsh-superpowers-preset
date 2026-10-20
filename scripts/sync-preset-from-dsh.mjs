@@ -13,6 +13,13 @@
  *
  *   node scripts/sync-preset-from-dsh.mjs <path-to-dsh-checkout>
  *   node scripts/sync-preset-from-dsh.mjs <path-to-dsh-checkout> --check
+ *   node scripts/sync-preset-from-dsh.mjs <path-to-dsh-checkout> --accept-dsh-version
+ *
+ * It refuses a checkout older than the 0.2.1 line that dropped the removed
+ * `persona`/`toolFilter` subagent config, and it refuses a checkout whose DSH
+ * version differs from the committed snapshot unless `--accept-dsh-version`
+ * says the upgrade is deliberate. That makes "mirror a different release" a
+ * decision instead of a side effect of passing the wrong path.
  *
  * It rewrites:
  *
@@ -31,7 +38,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
+import { blockDigest, collectRows, directConfigKeys, rowBlocks, topLevelBlocks } from './lib/rows.mjs'
 import { IDENTITY } from './lib/preset.mjs'
 
 const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -94,8 +101,11 @@ function takeBlock(entries, id) {
 
 const dshRoot = process.argv[2]
 const check = process.argv.includes('--check')
+const acceptDshVersion = process.argv.includes('--accept-dsh-version')
 if (dshRoot === undefined) {
-  console.error('usage: node scripts/sync-preset-from-dsh.mjs <path-to-dsh-checkout> [--check]')
+  console.error(
+    'usage: node scripts/sync-preset-from-dsh.mjs <path-to-dsh-checkout> [--check] [--accept-dsh-version]',
+  )
   process.exit(2)
 }
 
@@ -110,6 +120,46 @@ const standard = splitPlugins(standardText, standardPath)
 // the persona, which this port extends with the Superpowers bootstrap.
 const shippedPersona = takeBlock(standard.entries, 'persona').block
 standard.rest = takeBlock(standard.entries, 'persona').rest
+
+// The DSH 0.2.1 line removed `persona` and `toolFilter` from
+// `@deepseek-ai/dsh-tool-subagent` (the removal first shipped in
+// 0.2.1-alpha.3), and that plugin now throws at mount when either key is
+// present — which marks the whole preset broken. Standard dropped both. Refuse
+// an older checkout here instead of silently re-mirroring the keys that break
+// the mode.
+const SUBAGENT_SPECIFIER = '@deepseek-ai/dsh-tool-subagent'
+const REMOVED_SUBAGENT_CONFIG_KEYS = ['persona', 'toolFilter']
+for (const row of rowBlocks(standard.rest)) {
+  if (row.name !== SUBAGENT_SPECIFIER) continue
+  const removed = directConfigKeys(row).filter(key => REMOVED_SUBAGENT_CONFIG_KEYS.includes(key))
+  if (removed.length > 0) {
+    fail(
+      `the checkout's standard preset still configures ${removed.join(', ')} on row "${row.id}".\n` +
+      '  DSH 0.2.1 removed those keys (first shipped in 0.2.1-alpha.3) and the plugin throws at\n' +
+      '  mount when they are present. This checkout predates the target; check out a newer DSH\n' +
+      '  release instead of mirroring an older contract.',
+    )
+  }
+}
+
+// The target Standard list carries the market-tools row (`tool-plugin-market`,
+// added in DSH 0.2.1-alpha.4). Without this guard a checkout that predates it
+// would write a mirror with a silently missing capability; the version opt-in
+// alone cannot catch a first run from a clean older checkout.
+const marketRow = rowBlocks(standard.rest).find(row => row.id === 'tool-plugin-market')
+if (marketRow === undefined) {
+  fail(
+    "the checkout's standard preset carries no `tool-plugin-market` row.\n" +
+    '  It was added in DSH 0.2.1-alpha.4. Check out the target release instead of mirroring an\n' +
+    '  older capability list.',
+  )
+}
+if (marketRow.name !== '@deepseek-ai/dsh-plugin-market/tools') {
+  fail(
+    `the checkout's standard preset mounts "${marketRow.name}" as tool-plugin-market.\n` +
+    '  Expected @deepseek-ai/dsh-plugin-market/tools; update the mirror check if DSH renamed it.',
+  )
+}
 
 // Our persona must be Standard's persona plus the bootstrap, so the identity
 // line has to match the shipped one exactly, and Standard's suffix policy (none)
@@ -189,8 +239,19 @@ const nextText = `${header}\n        plugins:\n${additions}\n${mirrored}\n`
 const standardRows = collectRows(standard.rest)
 const standardBlocks = topLevelBlocks(standard.rest)
 
-/** The DSH release the mirror was taken from, when the checkout reports one. */
+/** A DSH source checkout reports a semver root version; an installed package dir does not. */
+const DSH_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
+
+/** The DSH release the mirror was taken from. */
 const dshVersion = JSON.parse(await readFile(join(resolve(dshRoot), 'package.json'), 'utf8').catch(() => '{}')).version
+if (typeof dshVersion !== 'string' || !DSH_VERSION_PATTERN.test(dshVersion)) {
+  fail(
+    `cannot read a DSH version from ${join(resolve(dshRoot), 'package.json')}.\n` +
+    '  Pass the root of a DSH source checkout: the script reads the checkout version and\n' +
+    '  packages/bundle/web-app/presets/standard.patch.yml. An installed package directory is\n' +
+    '  not a checkout.',
+  )
+}
 
 const parity = {
   $comment:
@@ -200,7 +261,7 @@ const parity = {
     'expression, or nested rows were edited by hand. A missing or altered row is a missing or altered ' +
     'capability. Refresh with: node scripts/sync-preset-from-dsh.mjs <dsh-root>',
   source: STANDARD_PRESET,
-  dshVersion: dshVersion ?? 'unknown',
+  dshVersion,
   rows: standardRows.map(row => ({ id: row.id, name: row.name, disabledInStandard: row.disabled })),
   blocks: standardBlocks.map(block => ({ id: block.id, sha256: blockDigest(block.text) })),
 }
@@ -208,6 +269,28 @@ const parity = {
 const currentText = await readFile(patchPath, 'utf8')
 const currentParity = await readFile(parityPath, 'utf8').catch(() => undefined)
 const nextParity = `${JSON.stringify(parity, null, 2)}\n`
+
+// The checkout's version decides which DSH release the committed snapshot
+// claims and which release the compatibility tables name. A different version is
+// an upgrade decision, not a side effect of pointing the script at another
+// checkout, so require the operator to opt in once and then update the docs.
+let previousVersion
+if (currentParity !== undefined) {
+  try { previousVersion = JSON.parse(currentParity).dshVersion } catch { previousVersion = undefined }
+}
+if (!acceptDshVersion && previousVersion !== undefined && previousVersion !== parity.dshVersion) {
+  fail(
+    `the checkout reports DSH ${parity.dshVersion}, but the committed snapshot targets ${previousVersion}.\n` +
+    '  Review the upgrade, then re-run with --accept-dsh-version, update the README compatibility\n' +
+    '  tables and docs/version references, and finish with npm run verify.',
+  )
+}
+if (acceptDshVersion && previousVersion !== undefined && previousVersion !== parity.dshVersion) {
+  console.log(
+    `[sync-preset-from-dsh] accepting DSH version change ${previousVersion} -> ${parity.dshVersion}; ` +
+    'update dsh.verifiedDsh in package.json, the README compatibility tables, and docs/version references',
+  )
+}
 
 if (check) {
   const drifted = currentText !== nextText || currentParity !== nextParity

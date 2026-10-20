@@ -32,19 +32,27 @@ limitation and ask for the missing path, export, or identifying detail.
 
 ## DeepSeek Harness
 
-Verified against DSH 0.2.1-alpha.2; confirm it against the records you actually read.
+Verified against DSH 0.2.1-rc.2; confirm it against the records you actually read.
 
-- Transcripts: `$DSH_HOME/sessions/<slugified-cwd>/session-<uuid>/session*.jsonl.zstd`
-  (`$DSH_HOME` defaults to `~/.dsh`). The slug is the working directory with
-  separators and non-alphanumeric characters folded to `-`, wrapped in `--`.
+- Transcripts: `$DSH_HOME/sessions/<project-slug>/<session-id>/session.v4.jsonl.zstd`
+  (`$DSH_HOME` defaults to `~/.dsh`). The project slug folds each run of `/`, `\`,
+  or `:` to one `-`, drops a leading `-` run, escapes every other unsafe character as
+  `~XXXX` (a space becomes `~0020`), truncates to 251 characters, and wraps the result
+  in `--`; a session with no recorded cwd lives under `_no-cwd`. The session id is
+  `session-<uuid>` for a started task and a bare `<uuid>` for a delegated child.
 - Child sessions dispatched through `subagent` / `subagent_fork` are peer
-  directories under the same slug whose header record carries `delegationDepth: 1`.
+  directories under the same project slug whose header record carries
+  `delegationDepth: 1` and `origin: "subagent"`.
 - The schema version is in the filename (`session.v4.jsonl.zstd`; older files are
   `session.v3.jsonl.zstd` or `session.jsonl.zstd`). Read the header record's
   `version` instead of guessing from the name.
-- Each file concatenates independent zstd frames, and the `zstd` CLI is usually
-  absent. See `../using-superpowers/references/dsh-tools.md` for the frame-by-frame
-  Node decompression command.
-- Records are JSON lines carrying `type`, `seq`, `time`, and `data`. Establish what
-  each type means from the records themselves — never import a meaning from another
-  harness.
+- Each file concatenates independent zstd frames, one per durable write batch (the
+  header is its own frame), and the `zstd` CLI is usually absent. See
+  `../../using-superpowers/references/dsh-tools.md` for the frame-by-frame Node
+  decompression command.
+- Each line is one JSON record. The first is the header (`type: "session"` with
+  `version`, `id`, `createdAt`, `isSeeded`, `delegationDepth`, plus optional `cwd`,
+  `parentSession`, `origin`, `agentPreset`); it has no `seq`, `time`, or `data`.
+  Every later line is an event carrying `type`, `seq`, `time`, and `data`. Establish
+  what each type means from the records themselves — never import a meaning from
+  another harness.

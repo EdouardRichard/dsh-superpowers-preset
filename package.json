@@ -1,6 +1,6 @@
 {
   "name": "dsh-superpowers-preset",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Superpowers as a DeepSeek Harness agent preset: the full obra/superpowers engineering methodology in one selectable mode, with its skills and workflow rules scoped to that mode.",
   "type": "module",
   "license": "MIT",
@@ -59,6 +59,7 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
+    "verifiedDsh": "0.2.1-rc.2",
     "superpowersUpstream": {
       "repository": "https://github.com/obra/superpowers",
       "tag": "v6.4.2",

@@ -10,7 +10,136 @@ each release below.
 
 ## [Unreleased]
 
+## [1.0.5] — 2026-10-20
+
 Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+**Adapted to DeepSeek Harness `v0.2.1-rc.2`** (verified against source
+checkout `687f282e86`), whose shipped `standard` preset this one mirrors. The
+0.2.1 line changed the delegation-row contract (first shipped in
+`0.2.1-alpha.3`), so the old mirror broke every Superpowers session in the mode
+from that release on; rc.2 is the target verified here.
+
+### Fixed
+
+- **The mode mounts again: `dsh-tool-subagent` no longer accepts `toolFilter`
+  (or `persona`).** DSH 0.2.1 removed both config keys (the removal first
+  shipped in `0.2.1-alpha.3`), and the plugin's `apply()` now throws when either
+  is present:
+  `tool-subagent: toolFilter is no longer supported; configure persona and tool
+  plugins in an Agent Preset and select it with agentPreset (spawn only)`. The
+  preset's `tool-subagent` and `tool-subagent-fork` rows still carried the
+  `toolFilter.deny` filter that was valid through `0.2.1-alpha.2` and hid the
+  reminder tools from children, so mounting the preset failed and the roster
+  marked the whole mode broken
+  (`agent preset superpowers: tool-subagent …`): a task could not be started in
+  it at all. The child schedule-tool restriction that filter encoded has been
+  enforced in the tool layer since `0.2.1-alpha.1` — `dsh-tool-schedule` refuses
+  a delegated caller with `A delegated subagent cannot use reminders.` — so the
+  filter had become redundant and the mirror drops it and follows Standard.
+  Verified end to end by booting the profile from the rc.2 checkout and reading
+  the live agent-preset roster: `superpowers` activates with no `broken`
+  diagnostic, where the pre-fix build reported both delegation rows.
+- **The shipped tool reference no longer claims `CLAUDE.md` is not auto-loaded.**
+  `agent-instructions` has loaded `AGENTS.md` and `CLAUDE.md` — plus the
+  `AGENTS.local.md` / `CLAUDE.local.md` overlays — in every directory from the
+  project root down to the working directory, and `AGENTS.md` at both user roots
+  (`$DSH_HOME`, `~/.agents`). The reference now describes that accurately,
+  including the tool-layer rule that a delegated subagent cannot use the
+  `schedule_*` tools (refused since `0.2.1-alpha.1`; the preset no longer filters
+  the tools away).
+- **The shipped tool reference was re-audited against the rc.2 checkout and
+  corrected.** It named `wait_agent`, which only the optional Agent Teams bundle
+  registers — the preset's delegation rows provide `send_message`,
+  `interrupt_agent`, and `list_agents`; it claimed worktree tools do not exist at
+  all, though an optional default-off Git Worktrees bundle adds
+  `create_worktree`; it described every session record as carrying
+  `{type, seq, time, data}`, though the first line is a header with no
+  `seq`/`time`/`data` and a different field set; and it described one zstd frame
+  per record, though frames follow durable write batches. It also called
+  `workflow` the only place to pin a per-unit model (`subagent` takes the same
+  overrides when the user enables model selection, which defaults off), put
+  `render-graphs.js` under a `scripts/` directory that does not exist, and
+  omitted that `workflow` too accepts `run_in_background`. The corrected text
+  also records the default delegation cap of 1 (nested dispatch fails, and rc.2
+  adds a depth note to the child's prompt), the model-selection setting and
+  `list_subagent_models`, that `/name` need not be the whole prompt, and carries
+  a "Verified against DSH 0.2.1-rc.2" stamp.
+
+### Changed
+
+- **The mirrored plugin list was refreshed from `standard` as of DSH
+  `0.2.1-rc.2`.** The delegation group lost its two `toolFilter` blocks and
+  Standard gained one row, `tool-plugin-market`
+  (`@deepseek-ai/dsh-plugin-market/tools`, disabled). The parity snapshot now
+  records `0.2.1-rc.2` (31 mirrored rows, 21 byte-identical blocks).
+  `npm run sync:preset -- <dsh-root> --check` and `npm run verify` are green.
+- `examples/profile-override.patch.yml` was re-copied from the refreshed preset,
+  so the copy-pasteable override no longer pins the removed delegation config and
+  carries the new `tool-plugin-market` row.
+- `scripts/verify.mjs` now fails when a row mounting
+  `@deepseek-ai/dsh-tool-subagent` sets `persona` or `toolFilter`. It checks the
+  parsed entry list (quoted, spaced, and inline flow mappings included) rather
+  than scanning the file, so a legitimate `persona:` key on another plugin row
+  cannot trip it. The verifier also asserts the `tool-plugin-market` row by name
+  **as a top-level row**, and compares the top-level row map with the snapshot in
+  both directions: moving a mirrored row into a new group, or adding a top-level
+  row the snapshot does not have, now fails instead of slipping past the
+  flattened presence check. The snapshot is produced by the same script as the
+  mirror, so these checks are independent of it.
+- `scripts/verify.mjs` also fails when a file under `port/overrides/` drifts from
+  its shipped copy under `skills/`. The sync script copies one over the other, but
+  CI never runs it, so a fix applied to only one copy would otherwise ship
+  instructions nobody reviewed.
+- `scripts/sync-preset-from-dsh.mjs` now refuses a checkout that predates the
+  target: it fails if the shipped standard preset still configures
+  `persona`/`toolFilter` on a `tool-subagent` row or lacks the
+  `tool-plugin-market` row (added in `0.2.1-alpha.4`), it requires
+  `--accept-dsh-version` when the checkout's DSH version differs from the
+  committed snapshot, and it refuses a path that does not report a DSH semantic
+  version (an installed package directory is not a checkout). Pointing the script
+  at the wrong checkout can no longer silently revert the mirror.
+- The `using-git-worktrees` DSH text (the transform in
+  `scripts/sync-from-upstream.mjs` and its generated copy) now says the optional,
+  default-off Git Worktrees bundle adds `create_worktree`, instead of claiming no
+  worktree tool exists. The `session-discovery.md` DSH section (transform and
+  generated copy) now documents the actual header record, the project-slug escape
+  rule, and a link base that resolves from the shipped file.
+- The compatibility sections describe DSH's plugin gate correctly now: it reads
+  an own `engines.dsh` range first and only otherwise checks `@deepseek-ai/dsh*`
+  peer dependencies
+  (`packages/boot/app-boot/src/plugin-compatibility.ts`). This package declares
+  neither, so DSH neither blocks nor validates it; `npm run verify` remains the
+  substitute. No `engines.dsh` was added: the composition is not tied to one DSH
+  patch release, and a range would move the failure from `verify` to the
+  installer for older and newer deployments alike.
+- The README install sections warn about the old package alias: a profile that
+  still depends on `superpowers-preset-dsh` and also installs
+  `dsh-superpowers-preset` would select two bundle layers that both insert
+  `preset-superpowers`. Remove the old alias first.
+- `lib/skills.js`'s rank comment now states the real filesystem ranks (project
+  100/200, custom 300, user 400/500, bundled 600): 550 means user and project
+  skills win over the packaged catalog, while DSH's bundled skills lose to it.
+- `docs/architecture.md` records the new guards and re-points its "presets own
+  local discovery" citation at `packages/bundle/web-app/cordis.patch.yml:505-512`,
+  which moved in the rc.2 checkout.
+- `package.json` now pins the release the mirror targets in `dsh.verifiedDsh`,
+  and `scripts/verify.mjs` fails when it disagrees with the parity snapshot, so
+  a stale or hand-edited snapshot cannot claim a different release than the docs
+  and the mirror name. The verifier also accepts `dsh.bundle.patch` as a string
+  or an array (rc.2 allows both) while still requiring exactly one patch file.
+  The compatibility tables now distinguish this package's Node floor (`>= 20`)
+  from DSH `0.2.1-rc.2`'s own requirement (`^22.19.0` or `>=24`).
+- Version references now name `0.2.1-rc.2`: both READMEs (badge, npm `latest`
+  caveat, compatibility tables with checkout `687f282e86`), `docs/guide.en.md`,
+  `docs/guide.zh.md`, the `session-discovery.md` generator in
+  `scripts/sync-from-upstream.mjs`, and its generated copy. The cited source
+  lines, `SESSION_FORMAT_VERSION` (4) and the transcript format were re-checked
+  against the rc.2 checkout; the discovery text now also spells out that a
+  current transcript is `session.v4.jsonl.zstd` and that a delegated child's
+  directory is named by its bare session id, not `session-<uuid>`.
+
+[1.0.5]: https://github.com/EdouardRichard/dsh-superpowers-preset/compare/v1.0.4...v1.0.5
 
 ## [1.0.4] — 2026-10-12
 

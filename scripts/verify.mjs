@@ -25,7 +25,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { blockDigest, collectRows, topLevelBlocks } from './lib/rows.mjs'
+import { blockDigest, collectRows, directConfigKeys, rowBlocks, topLevelBlocks } from './lib/rows.mjs'
 import {
   IDENTITY,
   PRESET_ID,
@@ -63,14 +63,28 @@ const pkg = await readJson(join(pkgRoot, 'package.json'))
 if (pkg.name !== 'dsh-superpowers-preset') fail(`package.json name is "${pkg.name}", expected "dsh-superpowers-preset"`)
 if (pkg.license !== 'MIT') fail(`package.json license is "${pkg.license}", expected "MIT"`)
 
-const patchRel = pkg.dsh?.bundle?.patch
-if (typeof patchRel !== 'string') {
-  fail('package.json is missing dsh.bundle.patch — the profile would install the package but mount nothing')
-} else if (!(await stat(join(pkgRoot, patchRel)).catch(() => null))?.isFile()) {
-  fail(`dsh.bundle.patch points at "${patchRel}", which does not exist`)
+// rc.2 accepts `dsh.bundle.patch` as a string or an ordered array. This package
+// ships one patch (the whole installation); accept both shapes but keep the
+// downstream checks anchored on exactly one file.
+const declaredPatch = pkg.dsh?.bundle?.patch
+const patchRels = typeof declaredPatch === 'string'
+  ? [declaredPatch]
+  : Array.isArray(declaredPatch) ? declaredPatch : undefined
+if (patchRels === undefined || patchRels.length === 0) {
+  fail('package.json declares no dsh.bundle.patch — the profile would install the package but mount nothing')
+} else if (patchRels.some(rel => typeof rel !== 'string')) {
+  fail('dsh.bundle.patch must contain only file paths')
+} else if (patchRels.length > 1) {
+  fail(
+    `dsh.bundle.patch declares ${patchRels.length} files; this verifier reads one. ` +
+    'Extend scripts/verify.mjs deliberately before shipping several bundle patches.',
+  )
+} else if (!(await stat(join(pkgRoot, patchRels[0])).catch(() => null))?.isFile()) {
+  fail(`dsh.bundle.patch points at "${patchRels[0]}", which does not exist`)
 } else {
-  ok(`bundle patch: ${patchRel}`)
+  ok(`bundle patch: ${patchRels[0]}`)
 }
+const patchRel = patchRels[0]
 
 if (typeof pkg.exports?.['./skills'] !== 'string') {
   fail('package.json exports no "./skills" subpath; the preset mounts dsh-superpowers-preset/skills')
@@ -157,10 +171,28 @@ ok(`plugin rows: ${specifiers.length} specifiers, all resolvable; provider is pr
 // preset that forgets it silently loses every project and user skill. The
 // snapshot records what the shipped preset carries so that loss fails the build.
 const parity = await readJson(join(pkgRoot, 'preset', 'standard-parity.json'))
-const shippedKeys = new Set(collectRows(patchText).map(row => `${row.id}|${row.name}`))
+// The commit pins the DSH release the snapshot was taken from; verify keeps the
+// two in step so a hand-edited or stale parity file cannot silently claim a
+// different release than the one the docs and the mirror name.
+const verifiedDsh = pkg.dsh?.verifiedDsh
+if (typeof verifiedDsh !== 'string' || verifiedDsh === '') {
+  fail('package.json is missing dsh.verifiedDsh — the DSH release this preset is verified against')
+} else if (verifiedDsh !== parity.dshVersion) {
+  fail(
+    `package.json pins dsh.verifiedDsh ${verifiedDsh}, but the parity snapshot records ` +
+    `${parity.dshVersion}; re-run scripts/sync-preset-from-dsh.mjs and review`,
+  )
+} else {
+  ok(`verified DSH release: ${verifiedDsh}`)
+}
 if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
   fail('preset/standard-parity.json carries no rows; refresh it with scripts/sync-preset-from-dsh.mjs')
+} else if (!Array.isArray(parity.blocks) || parity.blocks.length === 0) {
+  fail('preset/standard-parity.json carries no block digests; refresh it with scripts/sync-preset-from-dsh.mjs')
 } else {
+  // Presence by name and module, flattened across groups: a missing capability
+  // has to fail even when its row moved deeper into the tree.
+  const shippedKeys = new Set(collectRows(patchText).map(row => `${row.id}|${row.name}`))
   const missing = parity.rows.filter(row => !shippedKeys.has(`${row.id}|${row.name}`))
   if (missing.length > 0) {
     fail(
@@ -173,13 +205,34 @@ if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
   // Presence is not enough: the point of the mirror is that each row says the
   // same thing here as in the shipped preset. Hashing the whole top-level block
   // covers every config value, isolate map, disabled expression, and nested row.
-  const ours = new Map(topLevelBlocks(patchText).map(block => [block.id, blockDigest(block.text)]))
-  const altered = (parity.blocks ?? [])
-    .filter(block => ours.has(block.id) && ours.get(block.id) !== block.sha256)
-    .map(block => block.id)
-  if (!Array.isArray(parity.blocks) || parity.blocks.length === 0) {
-    fail('preset/standard-parity.json carries no block digests; refresh it with scripts/sync-preset-from-dsh.mjs')
+  //
+  // The digest map only holds rows that are still TOP-LEVEL. Compare both
+  // directions explicitly: a mirrored row moved into a new group would otherwise
+  // be skipped by the digest filter (its id is no longer a top-level key) while
+  // the flattened presence check above still found it, and a hand-added extra
+  // top-level row would never be compared at all. This is what makes "Standard
+  // plus this package's two rows" a structural invariant rather than a claim.
+  const topLevel = new Map(topLevelBlocks(patchText).map(block => [block.id, blockDigest(block.text)]))
+  const expected = new Map(parity.blocks.map(block => [block.id, block.sha256]))
+  const ownTopLevelRows = new Set(['persona', 'superpowers-skills'])
+  const demoted = parity.blocks.map(block => block.id).filter(id => !topLevel.has(id))
+  if (demoted.length > 0) {
+    fail(
+      `the preset no longer carries ${demoted.join(', ')} as top-level row(s) of its plugin list.\n` +
+      '    A mirrored row moved into a group is not the shipped composition — put local changes in a ' +
+      'profile patch, or re-mirror with scripts/sync-preset-from-dsh.mjs.',
+    )
   }
+  const extra = [...topLevel.keys()].filter(id => !expected.has(id) && !ownTopLevelRows.has(id))
+  if (extra.length > 0) {
+    fail(
+      `cordis.patch.yml carries top-level plugin row(s) the shipped standard preset does not: ` +
+      `${extra.join(', ')}.\n` +
+      '    A row this package adds is lost on the next mirror unless the sync script keeps it; ' +
+      'declare it deliberately or drop it.',
+    )
+  }
+  const altered = parity.blocks.filter(block => topLevel.get(block.id) !== block.sha256).map(block => block.id)
   if (altered.length > 0) {
     fail(
       `the preset's copy of ${altered.length} mirrored row(s) no longer matches the shipped standard ` +
@@ -189,9 +242,26 @@ if (!Array.isArray(parity.rows) || parity.rows.length === 0) {
     )
   }
   ok(
-    `standard parity: ${parity.rows.length} rows present and ${parity.blocks.length} blocks byte-identical ` +
-    `(snapshot from DSH ${parity.dshVersion}), plus this package's own provider`,
+    `standard parity: ${parity.rows.length} rows present and ${parity.blocks.length} top-level blocks ` +
+    `byte-identical, in place (snapshot from DSH ${parity.dshVersion}), plus this package's own two rows`,
   )
+}
+
+// The market-tools row is the one capability the 0.2.1-rc.2 Standard list gained
+// over the previous mirror. Check it by name as well as through the snapshot: a
+// missing row is a missing capability, and the snapshot that would otherwise
+// catch it is produced by the same script that produces the mirror. Top-level,
+// because moving a row into a group is not the shipped composition.
+const pluginMarket = topLevelBlocks(patchText).find(block => block.id === 'tool-plugin-market')
+if (pluginMarket === undefined) {
+  fail("cordis.patch.yml no longer carries the shipped standard preset's `tool-plugin-market` as a top-level row")
+} else {
+  const marketName = /^ *name: ['"]?([^'"\n]+)['"]?\s*$/m.exec(pluginMarket.text)?.[1]
+  if (marketName !== '@deepseek-ai/dsh-plugin-market/tools') {
+    fail(`row "tool-plugin-market" mounts "${marketName}", expected "@deepseek-ai/dsh-plugin-market/tools"`)
+  } else {
+    ok('plugin market: the tool-plugin-market row Standard carries is present as a top-level row')
+  }
 }
 
 // --------------------------------------------------------------- bootstrap --
@@ -288,6 +358,39 @@ ok(
   `bootstrap in step (drops: ${[...DROPPED_FROM_EXAMPLE].join(', ')})`,
 )
 
+// ------------------------------------------- removed subagent config keys --
+
+// The DSH 0.2.1 line removed `persona` and `toolFilter` from
+// `@deepseek-ai/dsh-tool-subagent` (the removal first shipped in
+// 0.2.1-alpha.3): the plugin's `apply()` throws when either key is present,
+// which marks the whole preset broken ("agent preset superpowers: tool-subagent
+// … toolFilter is no longer supported") and blocks every session in the mode.
+// The shipped `standard` preset dropped both — the child schedule-tool
+// restriction moved into the tool layer — so a re-mirror deletes them. Fail
+// loudly if a hand edit, or a future DSH release this port has not adapted to,
+// puts either key back.
+//
+// Checked on the row that mounts the plugin, from the parsed entry list rather
+// than by scanning the file: a quoted, spaced, or inline spelling still fails,
+// and a legitimate `persona:` config key on another plugin row does not.
+const SUBAGENT_SPECIFIER = '@deepseek-ai/dsh-tool-subagent'
+const REMOVED_SUBAGENT_CONFIG_KEYS = ['persona', 'toolFilter']
+for (const [label, text] of [['cordis.patch.yml', patchText], ['examples/profile-override.patch.yml', exampleText]]) {
+  for (const row of rowBlocks(text)) {
+    if (row.name !== SUBAGENT_SPECIFIER) continue
+    const removed = directConfigKeys(row).filter(key => REMOVED_SUBAGENT_CONFIG_KEYS.includes(key))
+    if (removed.length > 0) {
+      fail(
+        `${label}: row "${row.id}" (${SUBAGENT_SPECIFIER}) sets ${removed.join(', ')}.\n` +
+        '    DSH 0.2.1 removed those config keys (first shipped in 0.2.1-alpha.3) and the plugin\n' +
+        '    throws at mount when either is present, which breaks the whole preset. Configure\n' +
+        '    persona and tool plugins in the preset composition instead.',
+      )
+    }
+  }
+}
+ok('delegation rows: no subagent config keys removed by DSH 0.2.1')
+
 // ------------------------------------------------------------------ skills --
 
 const skillsRoot = join(pkgRoot, 'skills')
@@ -379,6 +482,25 @@ for (const path of skillFiles) {
   }
 }
 ok('skills: no dangling relative links, no references to removed harness files')
+
+// `port/overrides/` is laid over the synced upstream tree by
+// `scripts/sync-from-upstream.mjs`, so each override has a byte-identical
+// shipped copy under `skills/`. Nothing in CI runs that sync script, so a hand
+// edit to only one copy — the easy mistake when fixing a reference file — would
+// otherwise ship instructions nobody reviewed against the other copy.
+const overridesRoot = join(pkgRoot, 'port', 'overrides')
+const overrideFiles = await walkFiles(overridesRoot)
+for (const path of overrideFiles) {
+  const rel = path.slice(overridesRoot.length + 1).split('\\').join('/')
+  const shippedFile = join(skillsRoot, ...rel.split('/'))
+  const shipped = await readFile(shippedFile).catch(() => undefined)
+  if (shipped === undefined) {
+    fail(`port/overrides/${rel} has no shipped copy at skills/${rel}`)
+  } else if (!shipped.equals(await readFile(path))) {
+    fail(`skills/${rel} differs from port/overrides/${rel}; copy the override over the shipped file`)
+  }
+}
+ok(`overrides: ${overrideFiles.length} file(s) byte-identical to their shipped copies`)
 
 // --------------------------------------------------------------- reporting --
 

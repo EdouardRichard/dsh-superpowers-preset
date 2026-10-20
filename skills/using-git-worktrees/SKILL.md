@@ -50,13 +50,15 @@ Honor any existing declared preference without asking. If the user declines cons
 
 ### 1a. Native Worktree Tools
 
-The DeepSeek Harness ships no worktree tool: there is no `EnterWorktree`, no
-`WorktreeCreate`, no `/worktree` command, and no `--worktree` flag. Unless your
-human partner tells you otherwise, step 1a does not apply on this harness — go
-straight to the git fallback in Step 1b, which is the supported path here.
+The DeepSeek Harness default tool set has no worktree tool: there is no
+`EnterWorktree`, no `WorktreeCreate`, no `/worktree` command, and no `--worktree`
+flag. An optional, default-off Git Worktrees plugin bundle adds
+`create_worktree`, but it is not part of this preset. Unless your human partner
+tells you it is installed and enabled, step 1a does not apply on this harness —
+go straight to the git fallback in Step 1b, which is the supported path here.
 
-A user-installed plugin could add such a tool. If you can name one that is
-actually available in this session, use it and skip to Step 2; do not invent one.
+If you can name an actually available worktree tool in this session, use it and
+skip to Step 2; do not invent one.
 
 ### 1b. Git Worktree Fallback
 
@@ -163,7 +165,7 @@ Ready to implement <feature-name>
 | Excuse | Reality |
 |--------|---------|
 | "I'm obviously not in a worktree — no need to check" | Run Step 0. Harness-created isolation and submodules both fool eyeballing; the detection commands settle it. |
-| "`git worktree add` is quicker than hunting for a native tool" | On harnesses that have one, a native tool owns placement, branching, and cleanup. On DSH there is none, so Step 1b *is* the supported path — just follow it instead of improvising. |
+| "`git worktree add` is quicker than hunting for a native tool" | On harnesses that have one, a native tool owns placement, branching, and cleanup. On DSH default tooling there is none (the optional Git Worktrees bundle adds `create_worktree`), so Step 1b *is* the supported path — just follow it instead of improvising. |
 | "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
 | "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
 | "The workspace is fresh — baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run the tests now; proceeding past failures is your human partner's call. |

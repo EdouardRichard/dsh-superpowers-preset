@@ -125,7 +125,7 @@ ignored plan, or a skill that never fired.
 ## 3. Why the card has no such buttons
 
 This is not a configuration problem; it is how DSH is built today. In-card help
-is open to **built-in** presets only. Evidence from DSH `0.2.1-alpha.2`:
+is open to **built-in** presets only. Evidence from DSH `0.2.1-rc.2`:
 
 - `packages/client/ui-agent-preset/src/client/AgentPresetSection.tsx:115` calls
   `presetGuide(row.id, builtIn ? 'system' : 'user')`, and `:142-147` renders the

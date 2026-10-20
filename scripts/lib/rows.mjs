@@ -84,3 +84,99 @@ export function topLevelBlocks(entries) {
 export function blockDigest(text) {
   return createHash('sha256').update(text.replace(/\r\n/g, '\n')).digest('hex')
 }
+
+/**
+ * Every row in an entry list, nested groups included, with its own indentation
+ * and text. Unlike {@link collectRows}, the returned `text` carries the row's
+ * config so callers can inspect the keys it sets, and `indent` locates field
+ * lines without guessing an absolute column.
+ * @param entries - the entry list text.
+ * @returns `{ id, name, indent, text }` per row, in file order.
+ */
+export function rowBlocks(entries) {
+  const rows = []
+  const stack = []
+  for (const line of entries.split('\n')) {
+    const start = /^( *)- id: ([\w-]+)\s*$/.exec(line)
+    if (start !== null) {
+      const indent = start[1].length
+      // A row at the same or shallower indent closes every row it is not nested in.
+      while (stack.length > 0 && stack[stack.length - 1].indent >= indent) stack.pop()
+      const row = { id: start[2], name: undefined, indent, lines: [line] }
+      stack.push(row)
+      rows.push(row)
+      continue
+    }
+    for (const row of stack) row.lines.push(line)
+    const name = /^( *)name: (.+?)\s*$/.exec(line)
+    if (name !== null && stack.length > 0) {
+      const top = stack[stack.length - 1]
+      if (name[1].length === top.indent + 2 && top.name === undefined) {
+        top.name = name[2].replace(/^'(.*)'$/, '$1')
+      }
+    }
+  }
+  return rows.map(row => ({ id: row.id, name: row.name, indent: row.indent, text: row.lines.join('\n') }))
+}
+
+/**
+ * The keys a row sets directly under its `config:`, block style or inline.
+ * Nested mappings are not descended into: a key there belongs to a config
+ * object, not to the row's own config.
+ * @param row - one {@link rowBlocks} entry.
+ * @returns the direct config keys, in file order.
+ */
+export function directConfigKeys(row) {
+  const lines = row.text.split('\n')
+  const keys = []
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]
+    const match = /^( *)config:\s*(.*)$/.exec(line)
+    if (match === null || match[1].length !== row.indent + 2) continue
+    const inline = match[2].trim()
+    if (inline !== '') {
+      // Flow mapping: track brace depth so only the config object's own keys are
+      // collected, skipping keys of a nested value object.
+      let depth = 0
+      let expectKey = false
+      for (let cursor = 0; cursor < inline.length; cursor++) {
+        const char = inline[cursor]
+        if (char === '{') {
+          depth++
+          if (depth === 1) expectKey = true
+          continue
+        }
+        if (char === '}') {
+          depth--
+          continue
+        }
+        if (char === ',' && depth === 1) {
+          expectKey = true
+          continue
+        }
+        if (!expectKey || depth !== 1) continue
+        const key = /^[ \t]*["']?([A-Za-z][\w-]*)["']?\s*:/.exec(inline.slice(cursor))
+        if (key !== null) {
+          keys.push(key[1])
+          cursor += key[0].length - 1
+          expectKey = false
+        } else if (char.trim() !== '') {
+          expectKey = false
+        }
+      }
+      return keys
+    }
+    const configIndent = match[1].length
+    for (let probe = index + 1; probe < lines.length; probe++) {
+      const candidate = lines[probe]
+      if (candidate.trim() === '') continue
+      const indent = candidate.length - candidate.trimStart().length
+      if (indent <= configIndent) break
+      if (indent !== configIndent + 2) continue
+      const key = /^["']?([A-Za-z][\w-]*)["']?\s*:/.exec(candidate.trim())
+      if (key !== null) keys.push(key[1])
+    }
+    return keys
+  }
+  return keys
+}
