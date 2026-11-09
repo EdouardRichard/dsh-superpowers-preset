@@ -18,6 +18,7 @@ follow below.
 [![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.1-informational)](#compatibility)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
+[![npm](https://img.shields.io/npm/v/dsh-superpowers-preset?label=npm&color=cb3837)](https://www.npmjs.com/package/dsh-superpowers-preset)
 
 ![Selecting Superpowers mode for a new task](static/preset-picker.png)
 
@@ -78,6 +79,10 @@ profile yourself and refresh the browser.
 ### Option 2 — the command line
 
 ```sh
+# from npm (published; follows latest)
+dsh plugin --profile web add dsh-superpowers-preset
+
+# or from GitHub
 dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 

@@ -16,6 +16,7 @@
 [![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.1-informational)](#兼容性)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
+[![npm](https://img.shields.io/npm/v/dsh-superpowers-preset?label=npm&color=cb3837)](https://www.npmjs.com/package/dsh-superpowers-preset)
 
 ![在新建任务时选择 Superpowers 模式](static/preset-picker.png)
 
@@ -71,7 +72,10 @@
 ### 方式二：命令行
 
 ```sh
-# 从 GitHub 安装
+# 从 npm 安装（已上架，跟随 latest）
+dsh plugin --profile web add dsh-superpowers-preset
+
+# 或从 GitHub 安装
 dsh plugin --profile web add github:EdouardRichard/dsh-superpowers-preset
 ```
 
