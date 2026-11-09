@@ -10,12 +10,12 @@ methodology, packaged as a **DeepSeek Harness (DSH) agent preset**.
 Chosen per task, scoped per task: the workflow rules go into the system prompt,
 and the skill catalog is visible only in this mode.
 
-**This release is adapted to DSH `0.2.1-rc.2`** (source checkout `687f282e86`)
+**This release is adapted to DSH `0.2.2-rc.1`** (source checkout `66491b05e3`)
 and mirrors that release's Standard preset; install and compatibility notes
 follow below.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-informational)](#compatibility)
+[![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.1-informational)](#compatibility)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -88,9 +88,9 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 ```
 
 > ⚠️ `npx` resolves npm's `latest` tag, which can **lag behind** the harness you
-> are running (this project was verified on `0.2.1-rc.2`, while npm's `latest`
+> are running (this project was verified on `0.2.2-rc.1`, while npm's `latest`
 > often stays on an earlier release). Pin the version when they differ:
-> `npx --yes @deepseek-ai/dsh@0.2.1-rc.2 plugin ...`.
+> `npx --yes @deepseek-ai/dsh@0.2.2-rc.1 plugin ...`.
 > With pnpm, `pnpm dlx @deepseek-ai/dsh@<version> plugin ...` is equivalent.
 
 Replace `--profile` with the profile you actually run (`web`, `headless`, or your
@@ -255,7 +255,7 @@ cordis.patch.yml
 DSH disables several working rows at the host layer and lets each agent preset
 mount its own copy. The one that bites is `skill-filesystem`: the shipped patch
 says plainly that "presets own local discovery"
-(`packages/bundle/web-app/cordis.patch.yml:505-512`). A preset that forgets to
+(`packages/bundle/web-app/cordis.patch.yml:512-521`). A preset that forgets to
 mount it has **no local skill discovery at all** — `.dsh/skills`,
 `.agents/skills`, and `$DSH_HOME/skills` all disappear from the catalog, with no
 error to tell you why.
@@ -361,12 +361,12 @@ adaptation list is in [NOTICE.md](NOTICE.md).
 
 | | Status |
 | --- | --- |
-| DSH versions verified | `0.2.1-rc.2` (source checkout `687f282e86`) |
+| DSH versions verified | `0.2.2-rc.1` (source checkout `66491b05e3`) |
 | DSH interfaces used | `ctx.skills.registerProvider`, `dsh.bundle.patch`, the `@deepseek-ai/dsh-agent-preset` declaration format, `@deepseek-ai/dsh-persona` |
 | Runtime dependencies | **None.** Node built-ins only |
 | `engines.dsh` | **None declared.** A range would impose a hard version requirement; this bundle does not pin one and leaves compatibility to `npm run verify` |
 | peerDependencies | **None declared.** DSH's plugin compatibility gate reads an own `engines.dsh` range first and only otherwise inspects `@deepseek-ai/dsh*` peer dependencies. Declaring neither means the gate never blocks this bundle — at the cost of DSH not validating it for you. Re-run `npm run verify` after a DSH upgrade |
-| Node.js | >= 20 for this package's own code (verified on 24.x); DSH `0.2.1-rc.2` itself requires `^22.19.0` or `>=24` |
+| Node.js | >= 20 for this package's own code (verified on 24.x); DSH `0.2.2-rc.1` itself requires Node `>=24.9.0` |
 | Platforms | Windows, macOS, Linux. On Windows `tool-pwsh` is mounted; on POSIX, `tool-bash` |
 
 ### Known limitations

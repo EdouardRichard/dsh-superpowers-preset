@@ -3,7 +3,7 @@
 This is the platform reference for the Superpowers skills running on the
 **DeepSeek Harness (DSH)** through the `superpowers` agent preset. Read it when
 a skill names a tool, path, hook, or mechanism that does not exist on this
-harness — the DSH equivalent is here. Verified against DSH `0.2.1-rc.2`.
+harness — the DSH equivalent is here. Verified against DSH `0.2.2-rc.1`.
 
 ## This mode is opt-in
 
@@ -39,7 +39,7 @@ here too — but keep persistent rules in `AGENTS.md` to stay harness-neutral.
 | Claude Code | DSH equivalent | Notes |
 | --- | --- | --- |
 | `Bash` | `pwsh` (Windows) / `bash` (POSIX) | One of the two is mounted, never both. `pwsh` is the Windows tool; `bash` needs Git for Windows installed. |
-| `Read` / `Write` / `Edit` | `read` / `write` / `edit` | Same semantics. `write`/`edit` require reading a file before replacing it unless you created it in this session. |
+| `Read` / `Write` / `Edit` | `read` / `write` / `edit` | Same semantics. `write`/`edit` (and file deletion) require reading a file before replacing it unless you created it in this session. No `apply_patch` tool in this mode: the preset mirrors Standard, whose `tool-fs` row sets `applyPatch: false`. |
 | `Glob` / `Grep` | `glob` / `grep` | `glob` matches files only (never directories) and returns up to 100 paths; `grep` is ripgrep syntax, capped at 250 matches. |
 | `TodoWrite` | `todo_write` | Replaces the whole list on every call; `allowParallelInProgress` is on. |
 | `Task` (subagent) | `subagent` / `subagent_fork` | Every call returns a child id immediately and reports its result as a completion notice; `subagent_fork` inherits this conversation. `send_message` continues a run by agent id, `interrupt_agent` stops one, `list_agents` lists. Optional per-call model selection on `subagent` only (not on `subagent_fork`) — see below. |
@@ -65,11 +65,13 @@ fallback path here — still asking for consent before creating one.
   `subagent-driven-development` and `dispatching-parallel-agents`. `subagent`
   takes `{description, prompt}` — plus `cwd` to start the child in another
   directory — and returns a child id immediately; the result arrives later as a
-  completion notice. When the user enables child model selection (a setting that
-  is off by default) `subagent` also accepts `provider` / `model` /
-  `reasoning_effort`, and the same branch registers `list_subagent_models` to
-  list the allowed routes; otherwise the child runs on the model the session's
-  subagent settings select. When a skill says "always specify the model
+  completion notice. The preset's delegation row enables model selection and
+  model discovery, so `subagent` also accepts `provider` / `model` /
+  `reasoning_effort`, and a `list_subagent_models` tool lists the routes the
+  current session may pick. Which routes are choosable follows the Session's
+  policy: a user preference (off by default) supplies an allowlist, and without
+  one an explicit selection is limited to the parent's own route. When a skill
+  says "always specify the model
   explicitly" (most notably `subagent-driven-development`'s implementer
   dispatches) and no per-call selection is available, say it in the prompt and,
   when per-unit model control actually matters, use `workflow` — its
@@ -83,9 +85,11 @@ fallback path here — still asking for consent before creating one.
   with automatic continuation rounds; useful when a plan spans many turns.
 - `todo_write` — the checklist mechanism the skills' "create a todo per
   checklist item" rule refers to.
-- `schedule_*` — durable reminders that re-enter this session later. A delegated
-  subagent cannot use them: the tool layer refuses with
-  `A delegated subagent cannot use reminders.`
+- `schedule_create` / `schedule_list` / `schedule_view` / `schedule_edit` —
+  durable scheduled tasks and reminders that re-enter this session later
+  (`schedule_edit` also pauses, resumes, or deletes one). A delegated subagent
+  cannot use them: the tool layer refuses with
+  `A delegated subagent cannot use scheduled tasks.`
 - `skill` — the loader described above.
 
 ## Bundled scripts: always invoke them through an interpreter

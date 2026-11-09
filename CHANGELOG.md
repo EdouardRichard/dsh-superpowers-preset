@@ -10,6 +10,78 @@ each release below.
 
 ## [Unreleased]
 
+## [1.0.6] — 2026-11-09
+
+Upstream skills unchanged (obra/superpowers **v6.4.2**).
+
+**Adapted to DeepSeek Harness `v0.2.2-rc.1`** (verified against source checkout
+`66491b05e3`), whose shipped `standard` preset this one mirrors. The release
+folded child discovery into the shared subagent-control plugin and renamed the
+subagent model-selection config, so the old mirror failed to load in the mode.
+
+### Fixed
+
+- **The mode loads again: `@deepseek-ai/dsh-tool-subagent-control/list-agents`
+  no longer exists.** 0.2.2 merged the separately loadable `list_agents` plugin
+  into `@deepseek-ai/dsh-tool-subagent-control` (its `registerListAgents`), and
+  the package stopped exporting the `./list-agents` subpath. The preset still
+  mounted that subpath as its own row, so the row never started and the roster
+  marked the whole mode broken:
+  `tool-subagent-list-agents (@deepseek-ai/dsh-tool-subagent-control/list-agents): never started`.
+  A task could not be started in it at all. The row is deleted — the `list_agents`
+  tool itself remains available, now registered by the control row the preset
+  already mounts. Verified end to end by booting the profile from the 0.2.2-rc.1
+  checkout and reading the agent-preset roster: `superpowers` activates with no
+  `broken` diagnostic, where the pre-fix build reported that row.
+
+### Changed
+
+- **The mirrored plugin list was refreshed from `standard` as of DSH
+  `0.2.2-rc.1`.** The delegation group loses the separate `list-agents` row and
+  its two subagent rows now configure `modelSelection: true` and
+  `modelDiscovery: true` (the `modelSelectionSettings` key is gone; leaving it
+  would no longer configure anything). `tool-fs` now sets `applyPatch: false`
+  beside `edit`, and `tool-plugin-manager` disables itself through
+  `!!js "!ctx.get('profileContext')"` instead of a literal `true`. The parity
+  snapshot now records `0.2.2-rc.1` (30 mirrored rows, 21 top-level blocks).
+  `npm run sync:preset -- <dsh-root> --check` and `npm run verify` are green.
+- `examples/profile-override.patch.yml` was re-copied from the refreshed preset,
+  so the copy-pasteable override matches the new delegation rows, the `tool-fs`
+  config, and the dynamic `tool-plugin-manager` expression.
+- `scripts/sync-preset-from-dsh.mjs` names the upgrade decision when the shipped
+  preset drops a row the mirror still has: the row must be deleted deliberately
+  (as `list-agents` was) or recorded in `OWN_ROW_IDS`, instead of the error
+  reading like a local-only mistake.
+- The shipped tool reference was re-audited against 0.2.2-rc.1 and now names the
+  schedules the mode actually has (`schedule_create` / `schedule_list` /
+  `schedule_view` / `schedule_edit`, with `schedule_edit` also pausing, resuming,
+  and deleting) and the tool layer's current refusal
+  (`A delegated subagent cannot use scheduled tasks.`). It also documents the
+  preset's model-selection posture: the delegation row enables the
+  `provider` / `model` / `reasoning_effort` arguments and the
+  `list_subagent_models` tool, while the session policy decides which routes are
+  choosable (a user preference, off by default, supplies an allowlist; without
+  one, explicit selection is limited to the parent's own route). The write/edit
+  row notes that this mode mirrors Standard's `applyPatch: false`, so there is
+  no `apply_patch` tool, and that file deletion also requires a prior read. The
+  reference carries a fresh "Verified against DSH 0.2.2-rc.1" stamp.
+- `package.json` now pins `dsh.verifiedDsh` to `0.2.2-rc.1` (asserted against the
+  parity snapshot by `scripts/verify.mjs`), the compatibility tables name
+  checkout `66491b05e3`, and the Node rows record that DSH 0.2.2-rc.1 itself
+  requires Node `>=24.9.0` while this package's own code supports Node >= 20.
+  `docs/architecture.md` re-points its "presets own local discovery" citation at
+  `packages/bundle/web-app/cordis.patch.yml:512-521`, which moved in the 0.2.2
+  checkout.
+- Version references now name `0.2.2-rc.1`: both READMEs (badge, adapted-version
+  line, npm `latest` caveat, compatibility tables), `docs/guide.en.md`,
+  `docs/guide.zh.md`, the `session-discovery.md` generator in
+  `scripts/sync-from-upstream.mjs`, and its generated copy. The transcript facts
+  (`SESSION_FORMAT_VERSION` 4, the `session.v4.jsonl.zstd` filename, the project
+  slug and header record, and the session-id forms) were re-checked against the
+  0.2.2-rc.1 checkout and are unchanged.
+
+[1.0.6]: https://github.com/EdouardRichard/dsh-superpowers-preset/compare/v1.0.5...v1.0.6
+
 ## [1.0.5] — 2026-10-20
 
 Upstream skills unchanged (obra/superpowers **v6.4.2**).

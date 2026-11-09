@@ -375,7 +375,7 @@ const TRANSFORMS = [
       '',
       '## DeepSeek Harness',
       '',
-      'Verified against DSH 0.2.1-rc.2; confirm it against the records you actually read.',
+      'Verified against DSH 0.2.2-rc.1; confirm it against the records you actually read.',
       '',
       '- Transcripts: `' + DSH_HOME + '/sessions/<project-slug>/<session-id>/session.v4.jsonl.zstd`',
       '  (`' + DSH_HOME + '` defaults to `~/.dsh`). The project slug folds each run of `/`, `\\`,',

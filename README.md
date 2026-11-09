@@ -9,11 +9,11 @@
 
 按需选择、按任务生效：流程约定进系统提示词，技能目录只在这个模式里可见。
 
-**当前版本适配 DSH `0.2.1-rc.2`**（源码 checkout `687f282e86`），镜像的是该版本的
+**当前版本适配 DSH `0.2.2-rc.1`**（源码 checkout `66491b05e3`），镜像的是该版本的
 标准模式预设，安装与兼容性说明见下方。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-informational)](#兼容性)
+[![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.1-informational)](#兼容性)
 [![Upstream](https://img.shields.io/badge/upstream-obra%2Fsuperpowers%20v6.4.2-lightgrey)](https://github.com/obra/superpowers)
 [![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)](package.json)
 
@@ -82,9 +82,9 @@ npx --yes @deepseek-ai/dsh plugin --profile web add github:EdouardRichard/dsh-su
 ```
 
 > ⚠️ `npx` 默认取 npm 的 `latest` 标签，它可能**落后于**你正在运行的
-> harness（本项目验证于 DSH `0.2.1-rc.2`，而 npm 的 `latest` 往往停在更早的
+> harness（本项目验证于 DSH `0.2.2-rc.1`，而 npm 的 `latest` 往往停在更早的
 > 版本）。版本对不上时显式指定，例如
-> `npx --yes @deepseek-ai/dsh@0.2.1-rc.2 plugin ...`。
+> `npx --yes @deepseek-ai/dsh@0.2.2-rc.1 plugin ...`。
 > 用 pnpm 的话，`pnpm dlx @deepseek-ai/dsh@<版本> plugin ...` 等价。
 
 `--profile` 换成你实际用的 profile（`web` / `headless` / 自定义）。profile 不存在时
@@ -233,7 +233,7 @@ cordis.patch.yml
 
 **这一点是有保证的，不是大概齐。** DSH 会把一些实际可用的行在 host 层禁用，
 改由每个预设自己挂载——最典型的是 `skill-filesystem`：官方补丁里写得很清楚，
-"presets own local discovery"（`packages/bundle/web-app/cordis.patch.yml:505-512`）。
+"presets own local discovery"（`packages/bundle/web-app/cordis.patch.yml:512-521`）。
 预设如果忘了挂它，就**没有本地技能发现**：项目里的 `.dsh/skills`、`.agents/skills`
 和用户目录的 `$DSH_HOME/skills` 全部看不见，而且不会报错。
 
@@ -327,12 +327,12 @@ npm run verify
 
 | 项目 | 状态 |
 | --- | --- |
-| 验证过的 DSH 版本 | `0.2.1-rc.2`（源码 checkout `687f282e86`） |
+| 验证过的 DSH 版本 | `0.2.2-rc.1`（源码 checkout `66491b05e3`） |
 | 依赖的 DSH 接口 | `ctx.skills.registerProvider`（技能提供者注册）、`dsh.bundle.patch`（bundle 挂载）、`@deepseek-ai/dsh-agent-preset` 声明格式、`@deepseek-ai/dsh-persona` |
 | 运行时依赖 | **无**。只使用 Node 内置模块 |
 | `engines.dsh` | **不声明**。声明它会对 DSH 版本提出硬性要求；本包不锁定 DSH 版本，改由 `npm run verify` 承担兼容性检查 |
 | peerDependencies | **不声明**。DSH 的插件兼容闸门先读包自己的 `engines.dsh`，没有时才检查 `@deepseek-ai/dsh*` peer 依赖；两者都不声明意味着闸门不会拦截本包，代价是 DSH 也不会替你校验版本，所以升级 DSH 后请重跑 `npm run verify` |
-| Node.js | 本包代码 >= 20（本机在 24.x 上验证）；DSH `0.2.1-rc.2` 自身要求 `^22.19.0` 或 `>=24` |
+| Node.js | 本包代码 >= 20（本机在 24.x 上验证）；DSH `0.2.2-rc.1` 自身要求 Node `>=24.9.0` |
 | 平台 | Windows / macOS / Linux。Windows 上 `tool-pwsh` 生效，POSIX 上 `tool-bash` 生效 |
 
 ### 已知限制

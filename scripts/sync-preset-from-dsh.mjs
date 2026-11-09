@@ -208,7 +208,9 @@ const orphans = collectRows(rest).filter(row => !standardIds.has(row.id)).map(ro
 if (orphans.length > 0) {
   fail(
     `cordis.patch.yml carries row(s) the shipped standard preset does not: ${orphans.join(', ')}.\n` +
-    `  Add them to OWN_ROW_IDS so they survive a mirror, or remove them.`,
+    '  Decide deliberately: if DSH dropped the row (the 0.2.2 release merged list-agents into\n' +
+    '  tool-subagent-control, for example), delete it here and say why in CHANGELOG; if this\n' +
+    '  package added it, list it in OWN_ROW_IDS so a mirror keeps it.',
   )
 }
 

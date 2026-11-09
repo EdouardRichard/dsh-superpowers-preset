@@ -45,7 +45,7 @@ easiest to miss and worst to miss.
 DSH keeps the `skills` **registry** on the host plane but moves **discovery**
 behind presets: the base `skill-filesystem` row is disabled at the host layer,
 with the shipped patch explaining that "presets own local discovery"
-(`packages/bundle/web-app/cordis.patch.yml:505-512`). So a preset that does not
+(`packages/bundle/web-app/cordis.patch.yml:512-521`). So a preset that does not
 mount its own copy has no filesystem provider at all — its agent sees the
 packaged catalog and silently loses every skill the user has written, in the
 project or in `$DSH_HOME/skills`.
